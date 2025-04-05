@@ -25,6 +25,18 @@ func main() {
 	}
 	deckID := insertDeck(db, deck)
 	log.Printf("Inserted deck with ID: %d", deckID)
+
+	deck, err := getDeckDetails(db, 1)
+	if err != nil {
+		log.Fatalf("Error getting deck details: %v", err)
+	}
+	log.Printf("Deck ID: %+v", deck.ID)
+	log.Printf("Deck Name: %+v", deck.Name)
+	log.Printf("Deck Description: %+v", deck.Description)
+	log.Printf("Deck Creation Date: %+v", deck.CreationDate)
+	log.Printf("Deck Modification Date: %+v", deck.ModificationDate)
+	log.Printf("Deck Last Study Date: %+v", deck.LastStudyDate)
+	log.Printf("Deck Total Cards: %+v", deck.TotalCards)
 }
 
 func createDeckTable(db *sql.DB) {
@@ -64,4 +76,30 @@ func insertDeck(db *sql.DB, deck Deck) int {
 	}
 
 	return deck.ID
+}
+
+func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
+	query := `SELECT id, name, description, creation_date, modification_date, last_study_date, total_cards FROM decks WHERE id = $1`
+	var deck Deck
+
+	var lastStudyDate sql.NullTime
+	err := db.QueryRow(query, deckID).Scan(
+		&deck.ID,
+		&deck.Name,
+		&deck.Description,
+		&deck.CreationDate,
+		&deck.ModificationDate, &lastStudyDate,
+		&deck.TotalCards)
+
+	if err != nil {
+		return Deck{}, err
+	}
+
+	if lastStudyDate.Valid {
+		deck.LastStudyDate = lastStudyDate.Time
+	} else {
+		deck.LastStudyDate = time.Time{}
+	}
+
+	return deck, nil
 }
