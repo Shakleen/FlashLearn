@@ -36,6 +36,21 @@ func main() {
 		}
 	})
 
+	mux.HandleFunc("GET /deck", func(w http.ResponseWriter, r *http.Request) {
+		deckArray, err := getDeckArray(db)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(deckArray)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		}
+	})
+
 	err := http.ListenAndServe("localhost:8080", mux)
 
 	if err != nil {
