@@ -37,6 +37,19 @@ func main() {
 	log.Printf("Deck Modification Date: %+v", deck.ModificationDate)
 	log.Printf("Deck Last Study Date: %+v", deck.LastStudyDate)
 	log.Printf("Deck Total Cards: %+v", deck.TotalCards)
+
+	decks, err := getDeckArray(db)
+	if err != nil {
+		log.Fatalf("Error getting decks: %v", err)
+	}
+
+	log.Printf("Number of rows in decks: %d", len(decks))
+	for _, d := range decks {
+		log.Printf("Deck ID: %+v", d.ID)
+		log.Printf("Deck Name: %+v", d.Name)
+		log.Printf("Deck Description: %+v", d.Description)
+		log.Printf("Deck Total Cards: %+v", d.TotalCards)
+	}
 }
 
 func createDeckTable(db *sql.DB) {
@@ -105,4 +118,37 @@ func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
 	}
 
 	return deck, nil
+}
+
+func getDeckArray(db *sql.DB) ([]Deck, error) {
+	query := `SELECT id, name, description, total_cards FROM decks`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	} else if err == sql.ErrNoRows {
+		log.Printf("No decks found")
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var decks []Deck
+
+	for rows.Next() {
+		var deck Deck
+
+		err := rows.Scan(
+			&deck.ID,
+			&deck.Name,
+			&deck.Description,
+			&deck.TotalCards)
+
+		if err != nil {
+			return nil, err
+		}
+
+		decks = append(decks, deck)
+	}
+
+	return decks, nil
 }
