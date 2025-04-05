@@ -22,7 +22,7 @@ FlashLearn (FL) is a subscription-based online software. It’s a web extension 
 
 ### 1.4. References
 
-\[List any relevant documents, such as user stories, wireframes, or design specifications.\]
+* Use cases covered in use case diagrams under [Appendix](#6-appendix-optional)
 
 ## 2. Overall Description
 
@@ -206,4 +206,6 @@ Standalone product with future integrations to other products yet to be announce
 
 ## 6. Appendix (Optional)
 
-* \[Include any supplementary information, such as diagrams, mockups, or detailed specifications.\]
+* Use case diagrams
+    1. [Browser extension](diagrams/usecase_browser_extension.png)
+    1. [Website](diagrams/usecase_website.png)
