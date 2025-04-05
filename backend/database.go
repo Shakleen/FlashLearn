@@ -2,20 +2,38 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
+const deckTableName string = "decks"
+const deckColumnID string = "id"
+const deckColumnName string = "name"
+const deckColumnDescription string = "description"
+const deckColumnCreationDate string = "creation_date"
+const deckColumnModificationDate string = "modification_date"
+const deckColumnLastStudyDate string = "last_study_date"
+const deckColumnTotalCards string = "total_cards"
+const deckColumnNameMaxLength int = 64
+const deckColumnDescriptionMaxLength int = 255
+
 func createDeckTable(db *sql.DB) {
-	query := `CREATE TABLE IF NOT EXISTS decks (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(64) NOT NULL,
-		description VARCHAR(255) NOT NULL,
-		creation_date TIMESTAMP DEFAULT NOW(),
-		modification_date TIMESTAMP DEFAULT NOW(),
-		last_study_date TIMESTAMP,
-		total_cards INT DEFAULT 0
-	)`
+	var sb strings.Builder
+	sb.WriteString("CREATE TABLE IF NOT EXISTS ")
+	sb.WriteString(deckTableName)
+	sb.WriteString(" (")
+	sb.WriteString(fmt.Sprintf("%s SERIAL PRIMARY KEY, ", deckColumnID))
+	sb.WriteString(fmt.Sprintf("%s VARCHAR(%d) NOT NULL, ", deckColumnName, deckColumnNameMaxLength))
+	sb.WriteString(fmt.Sprintf("%s VARCHAR(%d) NOT NULL, ", deckColumnDescription, deckColumnDescriptionMaxLength))
+	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnCreationDate))
+	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnModificationDate))
+	sb.WriteString(fmt.Sprintf("%s TIMESTAMP, ", deckColumnLastStudyDate))
+	sb.WriteString(fmt.Sprintf("%s INT DEFAULT 0", deckColumnTotalCards))
+	sb.WriteString(")")
+
+	query := sb.String()
 
 	_, err := db.Exec(query)
 
@@ -35,7 +53,17 @@ type Deck struct {
 }
 
 func insertDeck(db *sql.DB, deck Deck) int {
-	query := `INSERT INTO decks (name, description) VALUES ($1, $2) RETURNING id`
+	var sb strings.Builder
+	sb.WriteString("INSERT INTO ")
+	sb.WriteString(deckTableName)
+	sb.WriteString(" (")
+	sb.WriteString(deckColumnName)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnDescription)
+	sb.WriteString(") VALUES ($1, $2) RETURNING ")
+	sb.WriteString(deckColumnID)
+
+	query := sb.String()
 	err := db.QueryRow(query, deck.Name, deck.Description).Scan(&deck.ID)
 
 	if err != nil {
@@ -46,7 +74,28 @@ func insertDeck(db *sql.DB, deck Deck) int {
 }
 
 func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
-	query := `SELECT id, name, description, creation_date, modification_date, last_study_date, total_cards FROM decks WHERE id = $1`
+	var sb strings.Builder
+	sb.WriteString("SELECT ")
+	sb.WriteString(deckColumnID)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnName)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnDescription)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnCreationDate)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnModificationDate)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnLastStudyDate)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnTotalCards)
+	sb.WriteString(" FROM ")
+	sb.WriteString(deckTableName)
+	sb.WriteString(" WHERE ")
+	sb.WriteString(deckColumnID)
+	sb.WriteString(" = $1")
+
+	query := sb.String()
 	var deck Deck
 
 	var lastStudyDate sql.NullTime
@@ -75,7 +124,19 @@ func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
 }
 
 func getDeckArray(db *sql.DB) ([]Deck, error) {
-	query := `SELECT id, name, description, total_cards FROM decks`
+	var sb strings.Builder
+	sb.WriteString("SELECT ")
+	sb.WriteString(deckColumnID)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnName)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnDescription)
+	sb.WriteString(", ")
+	sb.WriteString(deckColumnTotalCards)
+	sb.WriteString(" FROM ")
+	sb.WriteString(deckTableName)
+
+	query := sb.String()
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -109,9 +170,39 @@ func getDeckArray(db *sql.DB) ([]Deck, error) {
 
 func modifyDeckDetails(db *sql.DB, deck Deck) error {
 	deck.ModificationDate = time.Now()
-	query := `UPDATE decks SET name = $1, description = $2, modification_date = $3 WHERE id = $4`
+	var sb strings.Builder
+	sb.WriteString("UPDATE ")
+	sb.WriteString(deckTableName)
+	sb.WriteString(" SET ")
+	sb.WriteString(deckColumnName)
+	sb.WriteString(" = $1, ")
+	sb.WriteString(deckColumnDescription)
+	sb.WriteString(" = $2, ")
+	sb.WriteString(deckColumnModificationDate)
+	sb.WriteString(" = $3 WHERE ")
+	sb.WriteString(deckColumnID)
+	sb.WriteString(" = $4")
+
+	query := sb.String()
 	_, err := db.Exec(query, deck.Name, deck.Description, deck.ModificationDate, deck.ID)
 
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteDeck(db *sql.DB, id int) error {
+	var sb strings.Builder
+	sb.WriteString("DELETE FROM ")
+	sb.WriteString(deckTableName)
+	sb.WriteString(" WHERE ")
+	sb.WriteString(deckColumnID)
+	sb.WriteString(" = $1")
+
+	query := sb.String()
+	_, err := db.Exec(query, id)
 	if err != nil {
 		return err
 	}
