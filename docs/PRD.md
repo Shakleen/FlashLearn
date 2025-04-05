@@ -209,3 +209,4 @@ Standalone product with future integrations to other products yet to be announce
 * Use case diagrams
     1. [Browser extension](diagrams/usecase_browser_extension.png)
     1. [Website](diagrams/usecase_website.png)
+* [Entity relationship diagram for postgresql database](diagrams/erd_rdbms.png)
