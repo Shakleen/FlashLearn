@@ -43,13 +43,13 @@ func createDeckTable(db *sql.DB) {
 }
 
 type Deck struct {
-	ID               int
-	Name             string
-	Description      string
-	CreationDate     time.Time
-	ModificationDate time.Time
-	LastStudyDate    time.Time
-	TotalCards       int
+	ID               int       `json:"id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	CreationDate     time.Time `json:"creation_date"`
+	ModificationDate time.Time `json:"modification_date"`
+	LastStudyDate    time.Time `json:"last_study_date"`
+	TotalCards       int       `json:"total_cards"`
 }
 
 func insertDeck(db *sql.DB, deck Deck) int {
