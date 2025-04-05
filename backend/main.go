@@ -37,6 +37,8 @@ func main() {
 	}
 
 	defer db.Close()
+
+	createDeckTable(db)
 }
 
 func getPostgresConfig() Config {
@@ -47,7 +49,6 @@ func getPostgresConfig() Config {
 		log.Fatalf("Error loading secret.env file: %v", err)
 	}
 
-	// Get environment variables
 	config := Config{
 		DriverName: os.Getenv("POSTGRES_DRIVER"),
 		UserName:   os.Getenv("POSTGRES_USER"),
@@ -57,5 +58,24 @@ func getPostgresConfig() Config {
 		DbName:     os.Getenv("POSTGRES_DB"),
 		SSLMode:    os.Getenv("POSTGRES_SSL_MODE"),
 	}
+
 	return config
+}
+
+func createDeckTable(db *sql.DB) {
+	query := `CREATE TABLE IF NOT EXISTS decks (
+		id SERIAL PRIMARY KEY,
+		name VARCHAR(64) NOT NULL,
+		description VARCHAR(255) NOT NULL,
+		creation_date TIMESTAMP DEFAULT NOW(),
+		modification_date TIMESTAMP DEFAULT NOW(),
+		last_study_date TIMESTAMP,
+		total_cards INT DEFAULT 0
+	)`
+
+	_, err := db.Exec(query)
+
+	if err != nil {
+		log.Fatalf("Error creating decks table: %v", err)
+	}
 }
