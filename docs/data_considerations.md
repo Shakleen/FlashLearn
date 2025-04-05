@@ -1,6 +1,6 @@
 ## Data Storage Solution Considerations and Direction
 
-**User's Needs and Considerations:**
+### User's Needs and Considerations
 
 * **Initial Data Type:** Primarily structured data easily mappable to fields.
 * **Future Data Type:** Need to store larger, less structured items like long text, images, and audio.
@@ -18,14 +18,14 @@
 * **Cloud Platform:** Planning to use AWS for cloud compute and storage.
 * **Large File Access:** Currently unsure about the exact access patterns for larger files, potentially requiring some processing.
 
-**Chosen Direction:**
+### Chosen Direction
 
 Given the above considerations, the recommended direction is a **hybrid approach** utilizing two main AWS services:
 
 * **Amazon Relational Database Service (RDS)** for the core structured data.
 * **Amazon Simple Storage Service (S3)** for the larger, less structured items (BLOBs).
 
-**Reasons for Choosing This Direction:**
+### Reasons for Choosing This Direction
 
 * **Structured Data and Schema Enforcement:** RDS (specifically considering PostgreSQL, MySQL, or MariaDB) is well-suited for managing structured data with defined schemas, which is crucial for your data pipelines. SQL databases excel at maintaining data integrity and consistency for relational data.
 * **Querying Capabilities:** RDS offers robust querying capabilities using SQL, which you are already familiar with. It can efficiently handle time-based queries (with proper indexing), string matching, and queries based on IDs and relationships.
@@ -36,6 +36,10 @@ Given the above considerations, the recommended direction is a **hybrid approach
 * **AWS Integration:** Both RDS and S3 are core AWS services and integrate seamlessly with other AWS offerings, which can be beneficial for your overall architecture.
 * **Alignment with Priorities:** This hybrid approach aims to balance cost-effectiveness (by using S3 for bulk storage) and low latency (by optimizing RDS and potentially using S3's CDN capabilities if direct serving is needed).
 
-**Next Steps:**
+### Diagrams and Details
+
+1. [Postgresql ERD](diagrams/erd_rdbms.png)
+
+### Next Steps
 
 Further refinement would involve determining the specific RDS engine that best fits your needs and cost considerations, and deciding on the exact access patterns and potential processing requirements for the larger files in S3. This will influence how you manage the links between the two services and ensure the desired level of consistency.
