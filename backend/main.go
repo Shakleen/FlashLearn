@@ -93,6 +93,9 @@ func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
 
 	if err != nil {
 		return Deck{}, err
+	} else if err == sql.ErrNoRows {
+		log.Printf("No deck found with ID: %d", deckID)
+		return Deck{}, err
 	}
 
 	if lastStudyDate.Valid {
