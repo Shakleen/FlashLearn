@@ -16,40 +16,26 @@ func main() {
 	createDeckTable(db)
 
 	deck := Deck{
-		Name:             "My First Deck",
-		Description:      "This is a test deck",
+		ID:               1,
+		Name:             "My First Deck Edit2",
+		Description:      "This is a test deck Edit2",
 		CreationDate:     time.Now(),
 		ModificationDate: time.Now(),
 		LastStudyDate:    time.Time{},
 		TotalCards:       0,
 	}
-	deckID := insertDeck(db, deck)
-	log.Printf("Inserted deck with ID: %d", deckID)
 
-	deck, err := getDeckDetails(db, 1)
+	err := modifyDeckDetails(db, deck)
+	if err != nil {
+		log.Fatalf("Error modifying deck: %v", err)
+	}
+
+	deck2, err := getDeckDetails(db, deck.ID)
 	if err != nil {
 		log.Fatalf("Error getting deck details: %v", err)
 	}
-	log.Printf("Deck ID: %+v", deck.ID)
-	log.Printf("Deck Name: %+v", deck.Name)
-	log.Printf("Deck Description: %+v", deck.Description)
-	log.Printf("Deck Creation Date: %+v", deck.CreationDate)
-	log.Printf("Deck Modification Date: %+v", deck.ModificationDate)
-	log.Printf("Deck Last Study Date: %+v", deck.LastStudyDate)
-	log.Printf("Deck Total Cards: %+v", deck.TotalCards)
-
-	decks, err := getDeckArray(db)
-	if err != nil {
-		log.Fatalf("Error getting decks: %v", err)
-	}
-
-	log.Printf("Number of rows in decks: %d", len(decks))
-	for _, d := range decks {
-		log.Printf("Deck ID: %+v", d.ID)
-		log.Printf("Deck Name: %+v", d.Name)
-		log.Printf("Deck Description: %+v", d.Description)
-		log.Printf("Deck Total Cards: %+v", d.TotalCards)
-	}
+	log.Printf("Deck Name: %s", deck2.Name)
+	log.Printf("Deck Description: %s", deck2.Description)
 }
 
 func createDeckTable(db *sql.DB) {
@@ -151,4 +137,16 @@ func getDeckArray(db *sql.DB) ([]Deck, error) {
 	}
 
 	return decks, nil
+}
+
+func modifyDeckDetails(db *sql.DB, deck Deck) error {
+	deck.ModificationDate = time.Now()
+	query := `UPDATE decks SET name = $1, description = $2, modification_date = $3 WHERE id = $4`
+	_, err := db.Exec(query, deck.Name, deck.Description, deck.ModificationDate, deck.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
