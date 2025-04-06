@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"flash-learn/internal/database"
 	"flash-learn/internal/model"
@@ -12,13 +11,13 @@ import (
 
 type APIServer struct {
 	address     string
-	ddb_wrapper *database.DeckDBWrapper
+	ddb_wrapper database.DBWrapper
 }
 
-func NewAPIServer(address string, db *sql.DB) *APIServer {
+func NewAPIServer(address string, ddb_wrapper database.DBWrapper) *APIServer {
 	return &APIServer{
 		address:     address,
-		ddb_wrapper: database.NewDeckDBWrapper(db),
+		ddb_wrapper: ddb_wrapper,
 	}
 }
 

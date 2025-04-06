@@ -20,6 +20,18 @@ const deckColumnTotalCards string = "total_cards"
 const deckColumnNameMaxLength int = 64
 const deckColumnDescriptionMaxLength int = 255
 
+// An interface that defines the methods for interacting with the database.
+// This interface abstracts the database operations for decks,
+// allowing for easier testing and mocking.
+type DBWrapper interface {
+	CreateTable() error
+	Insert(deck model.Deck) (int, error)
+	GetSingle(deckID int) (model.Deck, error)
+	GetAll() ([]model.Deck, error)
+	Modify(deck model.Deck) error
+	Delete(id int) error
+}
+
 type DeckDBWrapper struct {
 	db *sql.DB
 }

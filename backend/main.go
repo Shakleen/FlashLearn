@@ -2,6 +2,7 @@ package main
 
 import (
 	"flash-learn/internal/api"
+	"flash-learn/internal/database"
 	"flash-learn/internal/utils"
 	"fmt"
 
@@ -11,7 +12,7 @@ import (
 func main() {
 	db := utils.ConnectToPostgres()
 
-	server := api.NewAPIServer("localhost:8080", db)
+	server := api.NewAPIServer("localhost:8080", database.NewDeckDBWrapper(db))
 	err := server.Run()
 
 	if err != nil {
