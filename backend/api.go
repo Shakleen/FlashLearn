@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -23,6 +24,7 @@ func (s *APIServer) Run() error {
 	router := http.NewServeMux()
 	router.HandleFunc("GET /deck/{id}", s.handleDeck)
 	router.HandleFunc("GET /deck", s.handleDeckArray)
+	router.HandleFunc("POST /deck", s.handleInsertDeck)
 
 	server := &http.Server{
 		Addr:    s.address,
@@ -68,4 +70,32 @@ func (s *APIServer) handleDeckArray(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
+}
+
+type DeckInput struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+func (s *APIServer) handleInsertDeck(w http.ResponseWriter, r *http.Request) {
+	var deckInput DeckInput
+	err := json.NewDecoder(r.Body).Decode(&deckInput)
+	if err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("Deck name:", deckInput.Name)
+	fmt.Println("Deck description:", deckInput.Description)
+
+	deck := NewDeck(deckInput.Name, deckInput.Description)
+	deckID := insertDeck(s.db, deck)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	response := map[string]int{"deck_id": deckID}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+	fmt.Println("Deck inserted with ID:", deckID)
 }

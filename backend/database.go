@@ -52,6 +52,17 @@ type Deck struct {
 	TotalCards       int       `json:"total_cards"`
 }
 
+func NewDeck(name, description string) Deck {
+	return Deck{
+		Name:             name,
+		Description:      description,
+		CreationDate:     time.Now(),
+		ModificationDate: time.Now(),
+		LastStudyDate:    time.Time{},
+		TotalCards:       0,
+	}
+}
+
 func insertDeck(db *sql.DB, deck Deck) int {
 	var sb strings.Builder
 	sb.WriteString("INSERT INTO ")
