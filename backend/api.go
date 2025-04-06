@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flash-learn/internal/database"
 	"flash-learn/internal/model"
 	"fmt"
 	"net/http"
@@ -10,14 +11,14 @@ import (
 )
 
 type APIServer struct {
-	address string
-	db      *sql.DB
+	address     string
+	ddb_wrapper *database.DeckDBWrapper
 }
 
 func NewAPIServer(address string, db *sql.DB) *APIServer {
 	return &APIServer{
-		address: address,
-		db:      db,
+		address:     address,
+		ddb_wrapper: database.NewDeckDBWrapper(db),
 	}
 }
 
@@ -46,7 +47,7 @@ func (s *APIServer) handleDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deck, err := getDeckDetails(s.db, id)
+	deck, err := s.ddb_wrapper.GetSingle(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -61,7 +62,7 @@ func (s *APIServer) handleDeck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleDeckArray(w http.ResponseWriter, r *http.Request) {
-	deckArray, err := getDeckArray(s.db)
+	deckArray, err := s.ddb_wrapper.GetAll()
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -92,7 +93,13 @@ func (s *APIServer) handleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Deck description:", deckInput.Description)
 
 	deck := model.NewDeck(deckInput.Name, deckInput.Description)
-	deckID := insertDeck(s.db, deck)
+	deckID, err := s.ddb_wrapper.Insert(deck)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	response := map[string]int{"deck_id": deckID}
@@ -126,7 +133,7 @@ func (s *APIServer) handleUpdateDeck(w http.ResponseWriter, r *http.Request) {
 	deck := model.NewDeck(deckInput.Name, deckInput.Description)
 	deck.ID = id
 
-	err3 := modifyDeckDetails(s.db, deck)
+	err3 := s.ddb_wrapper.Modify(deck)
 	if err3 != nil {
 		http.Error(w, err3.Error(), http.StatusInternalServerError)
 		return
@@ -151,7 +158,7 @@ func (s *APIServer) handleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = deleteDeck(s.db, id)
+	err = s.ddb_wrapper.Delete(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
