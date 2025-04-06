@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flash-learn/internal/model"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -90,7 +91,7 @@ func (s *APIServer) handleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Deck name:", deckInput.Name)
 	fmt.Println("Deck description:", deckInput.Description)
 
-	deck := NewDeck(deckInput.Name, deckInput.Description)
+	deck := model.NewDeck(deckInput.Name, deckInput.Description)
 	deckID := insertDeck(s.db, deck)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -122,7 +123,7 @@ func (s *APIServer) handleUpdateDeck(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Deck name:", deckInput.Name)
 	fmt.Println("Deck description:", deckInput.Description)
 
-	deck := NewDeck(deckInput.Name, deckInput.Description)
+	deck := model.NewDeck(deckInput.Name, deckInput.Description)
 	deck.ID = id
 
 	err3 := modifyDeckDetails(s.db, deck)

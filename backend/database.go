@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flash-learn/internal/model"
 	"fmt"
 	"log"
 	"strings"
@@ -42,28 +43,7 @@ func createDeckTable(db *sql.DB) {
 	}
 }
 
-type Deck struct {
-	ID               int       `json:"id"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description"`
-	CreationDate     time.Time `json:"creation_date"`
-	ModificationDate time.Time `json:"modification_date"`
-	LastStudyDate    time.Time `json:"last_study_date"`
-	TotalCards       int       `json:"total_cards"`
-}
-
-func NewDeck(name, description string) Deck {
-	return Deck{
-		Name:             name,
-		Description:      description,
-		CreationDate:     time.Now(),
-		ModificationDate: time.Now(),
-		LastStudyDate:    time.Time{},
-		TotalCards:       0,
-	}
-}
-
-func insertDeck(db *sql.DB, deck Deck) int {
+func insertDeck(db *sql.DB, deck model.Deck) int {
 	var sb strings.Builder
 	sb.WriteString("INSERT INTO ")
 	sb.WriteString(deckTableName)
@@ -84,7 +64,7 @@ func insertDeck(db *sql.DB, deck Deck) int {
 	return deck.ID
 }
 
-func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
+func getDeckDetails(db *sql.DB, deckID int) (model.Deck, error) {
 	var sb strings.Builder
 	sb.WriteString("SELECT ")
 	sb.WriteString(deckColumnID)
@@ -107,7 +87,7 @@ func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
 	sb.WriteString(" = $1")
 
 	query := sb.String()
-	var deck Deck
+	var deck model.Deck
 
 	var lastStudyDate sql.NullTime
 	err := db.QueryRow(query, deckID).Scan(
@@ -119,10 +99,10 @@ func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
 		&deck.TotalCards)
 
 	if err != nil {
-		return Deck{}, err
+		return model.Deck{}, err
 	} else if err == sql.ErrNoRows {
 		log.Printf("No deck found with ID: %d", deckID)
-		return Deck{}, err
+		return model.Deck{}, err
 	}
 
 	if lastStudyDate.Valid {
@@ -134,7 +114,7 @@ func getDeckDetails(db *sql.DB, deckID int) (Deck, error) {
 	return deck, nil
 }
 
-func getDeckArray(db *sql.DB) ([]Deck, error) {
+func getDeckArray(db *sql.DB) ([]model.Deck, error) {
 	var sb strings.Builder
 	sb.WriteString("SELECT ")
 	sb.WriteString(deckColumnID)
@@ -158,10 +138,10 @@ func getDeckArray(db *sql.DB) ([]Deck, error) {
 
 	defer rows.Close()
 
-	var decks []Deck
+	var decks []model.Deck
 
 	for rows.Next() {
-		var deck Deck
+		var deck model.Deck
 
 		err := rows.Scan(
 			&deck.ID,
@@ -179,7 +159,7 @@ func getDeckArray(db *sql.DB) ([]Deck, error) {
 	return decks, nil
 }
 
-func modifyDeckDetails(db *sql.DB, deck Deck) error {
+func modifyDeckDetails(db *sql.DB, deck model.Deck) error {
 	deck.ModificationDate = time.Now()
 	var sb strings.Builder
 	sb.WriteString("UPDATE ")
