@@ -2,13 +2,14 @@ package main
 
 import (
 	"flash-learn/internal/api"
+	"flash-learn/internal/utils"
 	"fmt"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	db := connectToPostgres()
+	db := utils.ConnectToPostgres()
 
 	server := api.NewAPIServer("localhost:8080", db)
 	err := server.Run()
