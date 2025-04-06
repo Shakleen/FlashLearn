@@ -26,6 +26,7 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /deck", s.handleDeckArray)
 	router.HandleFunc("POST /deck", s.handleInsertDeck)
 	router.HandleFunc("POST /deck/{id}", s.handleUpdateDeck)
+	router.HandleFunc("DELETE /deck/{id}", s.handleDeleteDeck)
 
 	server := &http.Server{
 		Addr:    s.address,
@@ -138,4 +139,31 @@ func (s *APIServer) handleUpdateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("Deck updated with ID:", id)
+}
+
+func (s *APIServer) handleDeleteDeck(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		http.Error(w, "Invalid deck ID", http.StatusBadRequest)
+		return
+	}
+
+	err = deleteDeck(s.db, id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	response := map[string]string{"message": "Deck deleted successfully"}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("Deck deleted with ID:", id)
 }
