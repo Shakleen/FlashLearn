@@ -12,7 +12,7 @@ type Deck struct {
 	TotalCards       int       `json:"total_cards"`
 }
 
-func NewDeck(name, description string) Deck {
+func NewDeck(name string, description string) Deck {
 	return Deck{
 		Name:             name,
 		Description:      description,
