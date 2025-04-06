@@ -1,4 +1,4 @@
-module main
+module flash-learn
 
 go 1.24.2
 
