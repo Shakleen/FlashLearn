@@ -25,7 +25,7 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /deck/{id}", s.handleDeck)
 	router.HandleFunc("GET /deck", s.handleDeckArray)
 	router.HandleFunc("POST /deck", s.handleInsertDeck)
-	router.HandleFunc("POST /deck/update", s.handleUpdateDeck)
+	router.HandleFunc("POST /deck/{id}", s.handleUpdateDeck)
 
 	server := &http.Server{
 		Addr:    s.address,
@@ -74,7 +74,6 @@ func (s *APIServer) handleDeckArray(w http.ResponseWriter, r *http.Request) {
 }
 
 type DeckInput struct {
-	ID          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -103,6 +102,14 @@ func (s *APIServer) handleInsertDeck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleUpdateDeck(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		http.Error(w, "Invalid deck ID", http.StatusBadRequest)
+		return
+	}
+
 	var deckInput DeckInput
 	err2 := json.NewDecoder(r.Body).Decode(&deckInput)
 	if err2 != nil {
@@ -110,12 +117,12 @@ func (s *APIServer) handleUpdateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Deck ID:", deckInput.ID)
+	fmt.Println("Deck ID:", id)
 	fmt.Println("Deck name:", deckInput.Name)
 	fmt.Println("Deck description:", deckInput.Description)
 
 	deck := NewDeck(deckInput.Name, deckInput.Description)
-	deck.ID = deckInput.ID
+	deck.ID = id
 
 	err3 := modifyDeckDetails(s.db, deck)
 	if err3 != nil {
@@ -130,5 +137,5 @@ func (s *APIServer) handleUpdateDeck(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Deck updated with ID:", deckInput.ID)
+	fmt.Println("Deck updated with ID:", id)
 }
