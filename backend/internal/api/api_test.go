@@ -2,7 +2,10 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"flash-learn/internal/database"
+	"flash-learn/internal/model"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -90,5 +93,58 @@ func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithError() {
 
 		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
 		assert.Equal(suite.T(), tc.expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
+	}
+}
+
+func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithValid() {
+	suite.db.CreateTable()
+
+	decks := []model.Deck{}
+	decks = append(decks, model.NewDeck("Deck #1", "This is a first deck"))
+	decks = append(decks, model.NewDeck("Deck #2", "This is a second deck"))
+
+	suite.db.Insert(decks[0])
+	suite.db.Insert(decks[1])
+
+	testCases := []struct {
+		name           string
+		deckID         string
+		expectedStatus int
+		expectedBody   model.Deck
+	}{
+		{
+			name:           "Valid deck id",
+			deckID:         "0",
+			expectedStatus: http.StatusOK,
+			expectedBody:   decks[0],
+		},
+		{
+			name:           "Valid deck id",
+			deckID:         "1",
+			expectedStatus: http.StatusOK,
+			expectedBody:   decks[1],
+		},
+	}
+
+	for _, tc := range testCases {
+		// Create a new request
+		req := httptest.NewRequest(http.MethodGet, "/deck/"+tc.deckID, nil)
+
+		// Create a ResponseRecorder to record the response
+		rr := httptest.NewRecorder()
+
+		ctx := req.Context()
+		req = req.WithContext(context.WithValue(ctx, "id", tc.deckID))
+
+		suite.server.HandleGetSingleDeck(rr, req)
+
+		jsonData, err := json.Marshal(tc.expectedBody)
+		if err != nil {
+			fmt.Println("Error marshaling to JSON:", err)
+			return
+		}
+
+		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
+		assert.Equal(suite.T(), string(jsonData)+"\n", rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
 	}
 }

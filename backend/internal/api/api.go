@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"flash-learn/internal/database"
 	"flash-learn/internal/utils"
 	"net/http"
@@ -72,15 +73,16 @@ func (s *APIServer) Stop() error {
 //   - 500 Internal Server Error : If there is an error while processing the request.
 //   - 200 OK : If the deck is found and the request is successful.
 func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) {
+	// Parse ID from URL
 	idStr := strings.Split(r.URL.Path, "/")[2]
-
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, GetSingleDeckInvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
 
-	_, dbErr := s.db.GetSingle(id)
+	// Fetch from database
+	deck, dbErr := s.db.GetSingle(id)
 	if dbErr != nil {
 		if dbErr == utils.ErrRecordNotExist {
 			http.Error(w, GetSingleDeckNotFoundErrorMessage, http.StatusBadRequest)
@@ -90,5 +92,12 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Encode and send response
+	w.Header().Set("Content-Type", "application/json")
+	encodingErr := json.NewEncoder(w).Encode(deck)
+	if encodingErr != nil {
+		http.Error(w, GetSingleDeckInternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
