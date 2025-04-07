@@ -102,6 +102,11 @@ func buildCreateTableQueryString() string {
 //   - int : The unique ID of the inserted deck.
 //   - error : An error if the insertion fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
+	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+		log.Fatal("Deck name or description exceeds maximum length")
+		return -1, utils.ErrMaxLengthExceeded
+	}
+
 	if wrapper.db == nil {
 		log.Fatal("Database connection is nil")
 		return -1, utils.ErrDatabaseNotExist
@@ -320,6 +325,11 @@ func buildGetAllQueryString() string {
 // Returns:
 //   - error : An error if the modification fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
+	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+		log.Fatal("Deck name or description exceeds maximum length")
+		return utils.ErrMaxLengthExceeded
+	}
+
 	if wrapper.db == nil {
 		log.Fatal("Database connection is nil")
 		return utils.ErrDatabaseNotExist

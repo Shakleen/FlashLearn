@@ -25,6 +25,10 @@ func (wrapper *DeckDBWrapperMock) CreateTable() error {
 }
 
 func (wrapper *DeckDBWrapperMock) Insert(deck model.Deck) (int, error) {
+	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+		return -1, utils.ErrMaxLengthExceeded
+	}
+
 	if wrapper.db == nil {
 		return 0, utils.ErrDatabaseNotExist
 	}
@@ -70,6 +74,10 @@ func (wrapper *DeckDBWrapperMock) GetCount() (int, error) {
 }
 
 func (wrapper *DeckDBWrapperMock) Modify(deck model.Deck) error {
+	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+		return utils.ErrMaxLengthExceeded
+	}
+
 	if wrapper.db == nil {
 		return utils.ErrDatabaseNotExist
 	}
