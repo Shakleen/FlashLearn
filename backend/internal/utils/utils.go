@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"database/sql"
@@ -40,7 +40,7 @@ func getPostgresConfig() Config {
 	return config
 }
 
-func connectToPostgres() *sql.DB {
+func ConnectToPostgres() *sql.DB {
 	config := getPostgresConfig()
 
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
