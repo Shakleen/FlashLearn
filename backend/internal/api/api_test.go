@@ -549,3 +549,121 @@ func (suite *APIServerTestSuite) TestModifyDeckHandlerWithNotEmpty() {
 		}
 	}
 }
+
+func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithError() {
+	testCases := []struct {
+		name           string
+		deckID         string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "Bad Request for no deck ID",
+			deckID:         "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request for invalid deck ID (non-numeric)",
+			deckID:         "a",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request for invalid deck ID (digit + non-numeric)",
+			deckID:         "1a",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Internal server error for valid deck ID (database doesn't exist)",
+			deckID:         "1",
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   InternalServerErrorMessage + "\n",
+		},
+		{
+			name:           "Internal server error for valid deck ID (deck table doesn't exist)",
+			deckID:         "1",
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   InternalServerErrorMessage + "\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		// Create a new request
+		req := httptest.NewRequest(http.MethodGet, "/deck/"+tc.deckID, nil)
+
+		// Create a ResponseRecorder to record the response
+		rr := httptest.NewRecorder()
+
+		ctx := req.Context()
+		req = req.WithContext(context.WithValue(ctx, "id", tc.deckID))
+
+		suite.server.HandleDeleteDeck(rr, req)
+
+		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
+		assert.Equal(suite.T(), tc.expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
+	}
+}
+
+func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithValid() {
+	suite.db.CreateTable()
+
+	decks := []model.Deck{}
+	decks = append(decks, model.NewDeck("Deck #1", "This is a first deck"))
+	decks = append(decks, model.NewDeck("Deck #2", "This is a second deck"))
+
+	suite.db.Insert(decks[0])
+	suite.db.Insert(decks[1])
+
+	testCases := []struct {
+		name           string
+		deckID         string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "Valid deck id (But doesn't exist in database)",
+			deckID:         "2",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Valid deck id",
+			deckID:         "0",
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"id":0}` + "\n",
+		},
+	}
+
+	for i, tc := range testCases {
+		// Create a new request
+		req := httptest.NewRequest(http.MethodGet, "/deck/"+tc.deckID, nil)
+
+		// Create a ResponseRecorder to record the response
+		rr := httptest.NewRecorder()
+
+		ctx := req.Context()
+		req = req.WithContext(context.WithValue(ctx, "id", tc.deckID))
+
+		suite.server.HandleDeleteDeck(rr, req)
+
+		expectedBody := tc.expectedBody
+		if i > 1 {
+			jsonData, err := json.Marshal(tc.expectedBody)
+			if err != nil {
+				fmt.Println("Error marshaling to JSON:", err)
+				return
+			}
+			expectedBody = string(jsonData) + "\n"
+		}
+
+		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
+		assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+
+		if i > 1 {
+			count, _ := suite.server.db.GetCount()
+			assert.True(suite.T(), count == 1, "Expected length of database to be %d but got %d", 1, count)
+		}
+	}
+}

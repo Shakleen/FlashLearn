@@ -70,7 +70,8 @@ func (wrapper *DeckDBWrapperMock) GetCount() (int, error) {
 		return 0, utils.ErrDatabaseNotExist
 	}
 
-	return len(wrapper.db), nil
+	length := len(wrapper.db)
+	return length, nil
 }
 
 func (wrapper *DeckDBWrapperMock) Modify(deck model.Deck) error {

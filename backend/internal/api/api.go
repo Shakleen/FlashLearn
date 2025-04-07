@@ -49,6 +49,8 @@ func (s *APIServer) Start() error {
 	router.HandleFunc("GET /deck/count", s.HandleGetDeckCount)
 	router.HandleFunc("POST /deck", s.HandleInsertDeck)
 	router.HandleFunc("POST /deck/{id}", s.HandleModifyDeck)
+	router.HandleFunc("DELETE /deck/{id}", s.HandleDeleteDeck)
+
 	s.server = &http.Server{
 		Addr:    s.address,
 		Handler: router,
@@ -277,6 +279,46 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(map[string]int{"id": deckID})
 	if err != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandleDeleteDeck handles the HTTP GET request for deleting a single deck.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+//
+// Errors:
+//   - 400 Bad Request : If the deck ID is invalid or deck is not found.
+//   - 500 Internal Server Error : If there is an error while processing the request.
+//   - 200 OK : If the deck is found and the request is successful.
+func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
+	// Parse ID from URL
+	idStr := strings.Split(r.URL.Path, "/")[2]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// Fetch from database
+	dbErr := s.db.Delete(id)
+	if dbErr != nil {
+		if dbErr == utils.ErrRecordNotExist {
+			http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
+		} else {
+			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Encode and send response
+	w.Header().Set("Content-Type", "application/json")
+	encodingErr := json.NewEncoder(w).Encode(map[string]int{"id": id})
+	if encodingErr != nil {
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
