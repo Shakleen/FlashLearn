@@ -9,8 +9,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -53,19 +55,19 @@ func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithError() {
 			name:           "Bad Request for no deck ID",
 			deckID:         "",
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   GetSingleDeckInvalidDeckIDErrorMessage + "\n",
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
 		},
 		{
 			name:           "Bad Request for invalid deck ID (non-numeric)",
 			deckID:         "a",
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   GetSingleDeckInvalidDeckIDErrorMessage + "\n",
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
 		},
 		{
 			name:           "Bad Request for invalid deck ID (digit + non-numeric)",
 			deckID:         "1a",
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   GetSingleDeckInvalidDeckIDErrorMessage + "\n",
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
 		},
 		{
 			name:           "Internal server error for valid deck ID (database doesn't exist)",
@@ -302,38 +304,38 @@ func (suite *APIServerTestSuite) TestInsertDeckHandlerWithError() {
 			name:           "Bad Request (Empty request body)",
 			requestBody:    "",
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+			expectedBody:   InvalidBodyErrorMessage + "\n",
 		},
 		{
 			name:           "Bad Request (corrupted request body)",
 			requestBody:    `{"name": "Interview Preparation", "description": "A deck containing cards for interview Preparation"`,
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+			expectedBody:   InvalidBodyErrorMessage + "\n",
 		},
 		{
 			name:           "Bad Request (No name in request body)",
 			requestBody:    `{}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+			expectedBody:   InvalidBodyErrorMessage + "\n",
 		},
 		{
 			name:           "Bad Request (Name is empty space)",
 			requestBody:    `{"name": " "}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+			expectedBody:   InvalidBodyErrorMessage + "\n",
 		},
 		{
 			name:           "Bad Request (Name is longer than max length)",
 			requestBody:    `{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+			expectedBody:   InvalidBodyErrorMessage + "\n",
 		},
 		{
 			name: "Bad Request (Description is longer than max length)",
 			requestBody: `{"name": "a",
 			"description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+			expectedBody:   InvalidBodyErrorMessage + "\n",
 		},
 		{
 			name:           "Bad Request (Database doesn't exist)",
@@ -374,4 +376,176 @@ func (suite *APIServerTestSuite) TestInsertDeckHandlerWithValid() {
 
 	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+}
+
+func (suite *APIServerTestSuite) TestModifyDeckHandlerWithError() {
+	testCases := []struct {
+		name           string
+		deckID         string
+		requestBody    string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "Bad Request for no deck ID",
+			deckID:         "",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request for invalid deck ID (non-numeric)",
+			deckID:         "a",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request for invalid deck ID (digit + non-numeric)",
+			deckID:         "1a",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Empty request body)",
+			deckID:         "1",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (corrupted request body)",
+			deckID:         "1",
+			requestBody:    `{"name": "Interview Preparation", "description": "A deck containing cards for interview Preparation"`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (No name in request body)",
+			deckID:         "1",
+			requestBody:    `{}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Name is empty space)",
+			deckID:         "1",
+			requestBody:    `{"name": " "}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Name is longer than max length)",
+			deckID:         "1",
+			requestBody:    `{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:   "Bad Request (Description is longer than max length)",
+			deckID: "1",
+			requestBody: `{"name": "a",
+			"description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Database doesn't exist)",
+			deckID:         "1",
+			requestBody:    `{"name": "Test Name", "description": "Test Description"}`,
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   InternalServerErrorMessage + "\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		// Create a new request
+		req := httptest.NewRequest(http.MethodGet, "/deck/"+tc.deckID, nil)
+		ctx := req.Context()
+		req = req.WithContext(context.WithValue(ctx, "id", tc.deckID))
+		req.Body = io.NopCloser(strings.NewReader(tc.requestBody))
+
+		// Create a ResponseRecorder to record the response
+		rr := httptest.NewRecorder()
+
+		suite.server.HandleModifyDeck(rr, req)
+
+		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
+		assert.Equal(suite.T(), tc.expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
+	}
+}
+
+func (suite *APIServerTestSuite) TestModifyDeckHandlerWithNotEmpty() {
+	suite.db.CreateTable()
+
+	decks := []model.Deck{}
+	decks = append(decks, model.NewDeck("Deck #1", "This is a first deck"))
+	decks = append(decks, model.NewDeck("Deck #2", "This is a second deck"))
+
+	suite.db.Insert(decks[0])
+	suite.db.Insert(decks[1])
+
+	testCases := []struct {
+		name           string
+		deckID         string
+		requestBody    string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "Bad Request (Deck with ID doesn't exist)",
+			deckID:         "2",
+			requestBody:    `{"name": "Modified Name", "description": "Modified Description"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Valid Request (Database doesn't exist)",
+			deckID:         "0",
+			requestBody:    `{"name": "Modified Name", "description": "Modified Description"}`,
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"id":0}` + "\n",
+		},
+	}
+
+	for i, tc := range testCases {
+		// Create a new request
+		req := httptest.NewRequest(http.MethodGet, "/deck/"+tc.deckID, nil)
+		ctx := req.Context()
+		req = req.WithContext(context.WithValue(ctx, "id", tc.deckID))
+		req.Body = io.NopCloser(strings.NewReader(tc.requestBody))
+
+		// Create a ResponseRecorder to record the response
+		rr := httptest.NewRecorder()
+
+		suite.server.HandleModifyDeck(rr, req)
+
+		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
+		assert.Equal(suite.T(), tc.expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
+
+		if i > 0 {
+			deckID, _ := strconv.Atoi(tc.deckID)
+			deck, _ := suite.server.db.GetSingle(deckID)
+			assert.Equal(
+				suite.T(),
+				"Modified Name",
+				deck.Name,
+				"Name after modification should match",
+			)
+			assert.Equal(
+				suite.T(),
+				"Modified Description",
+				deck.Description,
+				"Description after modification should match",
+			)
+
+			timeDiff := time.Since(deck.ModificationDate)
+			assert.True(
+				suite.T(),
+				timeDiff < 1*time.Millisecond,
+				"ModificationDate should be close to the current time",
+			)
+		}
+	}
 }

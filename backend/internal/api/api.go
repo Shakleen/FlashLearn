@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	GetSingleDeckInvalidDeckIDErrorMessage string = "Invalid deck ID"
-	InsertDeckInvalidBodyErrorMessage      string = "Invalid request body"
-	GetSingleDeckNotFoundErrorMessage      string = "Deck not found"
-	InternalServerErrorMessage             string = "Internal server error"
+	InvalidDeckIDErrorMessage         string = "Invalid deck ID"
+	InvalidBodyErrorMessage           string = "Invalid request body"
+	GetSingleDeckNotFoundErrorMessage string = "Deck not found"
+	InternalServerErrorMessage        string = "Internal server error"
 )
 
 type APIServer struct {
@@ -48,6 +48,7 @@ func (s *APIServer) Start() error {
 	router.HandleFunc("GET /deck", s.HandleGetAllDecks)
 	router.HandleFunc("GET /deck/count", s.HandleGetDeckCount)
 	router.HandleFunc("POST /deck", s.HandleInsertDeck)
+	router.HandleFunc("POST /deck/{id}", s.HandleModifyDeck)
 	s.server = &http.Server{
 		Addr:    s.address,
 		Handler: router,
@@ -82,7 +83,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 	idStr := strings.Split(r.URL.Path, "/")[2]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, GetSingleDeckInvalidDeckIDErrorMessage, http.StatusBadRequest)
+		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
 
@@ -184,7 +185,7 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	var bodyInput InsertInput
 	err := json.NewDecoder(r.Body).Decode(&bodyInput)
 	if err != nil {
-		http.Error(w, InsertDeckInvalidBodyErrorMessage, http.StatusBadRequest)
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
 	}
 
@@ -192,7 +193,7 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	bodyInput.Name = strings.TrimSpace(bodyInput.Name)
 	bodyInput.Description = strings.TrimSpace(bodyInput.Description)
 	if bodyInput.Name == "" {
-		http.Error(w, InsertDeckInvalidBodyErrorMessage, http.StatusBadRequest)
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
 	}
 
@@ -201,7 +202,7 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	deckID, dbErr := s.db.Insert(deck)
 	if dbErr != nil {
 		if dbErr == utils.ErrMaxLengthExceeded {
-			http.Error(w, InsertDeckInvalidBodyErrorMessage, http.StatusBadRequest)
+			http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		} else {
 			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		}
@@ -216,4 +217,63 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+}
+
+// HandleModifyDeck handles the HTTP POST request for modifying an existing deck.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
+	// Parse ID from URL
+	idStr := strings.Split(r.URL.Path, "/")[2]
+	deckID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// Parse JSON data from request body
+	type InsertInput struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	var bodyInput InsertInput
+	err = json.NewDecoder(r.Body).Decode(&bodyInput)
+	if err != nil {
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// Process input data
+	bodyInput.Name = strings.TrimSpace(bodyInput.Name)
+	bodyInput.Description = strings.TrimSpace(bodyInput.Description)
+	if bodyInput.Name == "" {
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// Modify row in database
+	deck := model.NewDeck(bodyInput.Name, bodyInput.Description)
+	deck.ID = deckID
+	dbErr := s.db.Modify(deck)
+	if dbErr != nil {
+		if dbErr == utils.ErrMaxLengthExceeded {
+			http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		} else if dbErr == utils.ErrRecordNotExist {
+			http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
+		} else {
+			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Encode and send response
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(map[string]int{"id": deckID})
+	if err != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
