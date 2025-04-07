@@ -13,7 +13,7 @@ func main() {
 	db := utils.ConnectToPostgres()
 
 	server := api.NewAPIServer("localhost:8080", database.NewDeckDBWrapper(db))
-	err := server.Run()
+	err := server.Start()
 
 	if err != nil {
 		fmt.Println("Error starting server:", err)

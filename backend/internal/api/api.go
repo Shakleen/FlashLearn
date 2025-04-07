@@ -1,176 +1,94 @@
 package api
 
 import (
-	"encoding/json"
 	"flash-learn/internal/database"
-	"flash-learn/internal/model"
-	"fmt"
+	"flash-learn/internal/utils"
 	"net/http"
 	"strconv"
+	"strings"
+)
+
+const (
+	GetSingleDeckInvalidDeckIDErrorMessage  string = "Invalid deck ID"
+	GetSingleDeckNotFoundErrorMessage       string = "Deck not found"
+	GetSingleDeckInternalServerErrorMessage string = "Internal server error"
 )
 
 type APIServer struct {
-	address     string
-	ddb_wrapper database.DBWrapper
+	address string
+	db      database.DBWrapper
+	server  *http.Server
 }
 
-func NewAPIServer(address string, ddb_wrapper database.DBWrapper) *APIServer {
+// NewAPIServer creates a new instance of APIServer.
+// It initializes the server with the given address and database wrapper.
+// The address is the server's listening address, and the db is the database wrapper
+// used for database operations.
+func NewAPIServer(address string, db database.DBWrapper) *APIServer {
 	return &APIServer{
-		address:     address,
-		ddb_wrapper: ddb_wrapper,
+		address: address,
+		db:      db,
 	}
 }
 
-func (s *APIServer) Run() error {
-	router := http.NewServeMux()
-	router.HandleFunc("GET /deck/{id}", s.handleDeck)
-	router.HandleFunc("GET /deck", s.handleDeckArray)
-	router.HandleFunc("POST /deck", s.handleInsertDeck)
-	router.HandleFunc("POST /deck/{id}", s.handleUpdateDeck)
-	router.HandleFunc("DELETE /deck/{id}", s.handleDeleteDeck)
+// Start initializes the server and starts listening for incoming requests.
+//
+// Returns:
+//   - error : An error if the server fails to start, nil otherwise.
+func (s *APIServer) Start() error {
+	if s.server != nil {
+		return nil
+	}
 
-	server := &http.Server{
+	router := http.NewServeMux()
+	router.HandleFunc("/deck/{id}", s.HandleGetSingleDeck)
+	s.server = &http.Server{
 		Addr:    s.address,
 		Handler: router,
 	}
-
-	return server.ListenAndServe()
+	return s.server.ListenAndServe()
 }
 
-func (s *APIServer) handleDeck(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
+// Stop stops the server if it is running.
+//
+// Returns:
+//   - error : An error if the server fails to stop, nil otherwise.
+func (s *APIServer) Stop() error {
+	if s.server == nil {
+		return nil
+	}
+
+	return s.server.Close()
+}
+
+// HandleGetSingleDeck handles the HTTP GET request for retrieving a single deck.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+//
+// Errors:
+//   - 400 Bad Request : If the deck ID is invalid or deck is not found.
+//   - 500 Internal Server Error : If there is an error while processing the request.
+//   - 200 OK : If the deck is found and the request is successful.
+func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.Split(r.URL.Path, "/")[2]
+
 	id, err := strconv.Atoi(idStr)
-
 	if err != nil {
-		http.Error(w, "Invalid deck ID", http.StatusBadRequest)
+		http.Error(w, GetSingleDeckInvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
 
-	deck, err := s.ddb_wrapper.GetSingle(id)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	_, dbErr := s.db.GetSingle(id)
+	if dbErr != nil {
+		if dbErr == utils.ErrRecordNotExist {
+			http.Error(w, GetSingleDeckNotFoundErrorMessage, http.StatusBadRequest)
+		} else {
+			http.Error(w, GetSingleDeckInternalServerErrorMessage, http.StatusInternalServerError)
+		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(deck)
-	if err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
-}
-
-func (s *APIServer) handleDeckArray(w http.ResponseWriter, r *http.Request) {
-	deckArray, err := s.ddb_wrapper.GetAll()
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(deckArray)
-	if err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
-}
-
-type DeckInput struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-func (s *APIServer) handleInsertDeck(w http.ResponseWriter, r *http.Request) {
-	var deckInput DeckInput
-	err := json.NewDecoder(r.Body).Decode(&deckInput)
-	if err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
-
-	fmt.Println("Deck name:", deckInput.Name)
-	fmt.Println("Deck description:", deckInput.Description)
-
-	deck := model.NewDeck(deckInput.Name, deckInput.Description)
-	deckID, err := s.ddb_wrapper.Insert(deck)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	response := map[string]int{"deck_id": deckID}
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
-	fmt.Println("Deck inserted with ID:", deckID)
-}
-
-func (s *APIServer) handleUpdateDeck(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
-
-	if err != nil {
-		http.Error(w, "Invalid deck ID", http.StatusBadRequest)
-		return
-	}
-
-	var deckInput DeckInput
-	err2 := json.NewDecoder(r.Body).Decode(&deckInput)
-	if err2 != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
-
-	fmt.Println("Deck ID:", id)
-	fmt.Println("Deck name:", deckInput.Name)
-	fmt.Println("Deck description:", deckInput.Description)
-
-	deck := model.NewDeck(deckInput.Name, deckInput.Description)
-	deck.ID = id
-
-	err3 := s.ddb_wrapper.Modify(deck)
-	if err3 != nil {
-		http.Error(w, err3.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	response := map[string]string{"message": "Deck updated successfully"}
-	err4 := json.NewEncoder(w).Encode(response)
-	if err4 != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("Deck updated with ID:", id)
-}
-
-func (s *APIServer) handleDeleteDeck(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
-
-	if err != nil {
-		http.Error(w, "Invalid deck ID", http.StatusBadRequest)
-		return
-	}
-
-	err = s.ddb_wrapper.Delete(id)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	response := map[string]string{"message": "Deck deleted successfully"}
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("Deck deleted with ID:", id)
 }
