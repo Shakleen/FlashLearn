@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"flash-learn/internal/model"
+	"flash-learn/internal/utils"
 	"fmt"
 	"log"
 	"strings"
@@ -27,6 +28,7 @@ type DBWrapper interface {
 	CreateTable() error
 	Insert(deck model.Deck) (int, error)
 	GetSingle(deckID int) (model.Deck, error)
+	GetCount() (int, error)
 	GetAll() ([]model.Deck, error)
 	Modify(deck model.Deck) error
 	Delete(id int) error
@@ -52,6 +54,11 @@ func NewDeckDBWrapper(db *sql.DB) *DeckDBWrapper {
 // Returns:
 //   - error : An error if the table creation fails, nil otherwise.
 func (wrapper *DeckDBWrapper) CreateTable() error {
+	if wrapper.db == nil {
+		log.Fatal("Database connection is nil")
+		return utils.ErrDatabaseNotExist
+	}
+
 	query := buildCreateTableQueryString()
 
 	_, err := wrapper.db.Exec(query)
@@ -95,6 +102,11 @@ func buildCreateTableQueryString() string {
 //   - int : The unique ID of the inserted deck.
 //   - error : An error if the insertion fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
+	if wrapper.db == nil {
+		log.Fatal("Database connection is nil")
+		return -1, utils.ErrDatabaseNotExist
+	}
+
 	query := buildInsertQueryString()
 	err := wrapper.db.QueryRow(query, deck.Name, deck.Description).Scan(&deck.ID)
 
@@ -134,6 +146,11 @@ func buildInsertQueryString() string {
 //   - model.Deck : The details of the retrieved deck as a model.Deck object.
 //   - error : An error if the retrieval fails, nil otherwise.
 func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
+	if wrapper.db == nil {
+		log.Fatal("Database connection is nil")
+		return model.Deck{}, utils.ErrDatabaseNotExist
+	}
+
 	var deck model.Deck
 	var lastStudyDate sql.NullTime
 
@@ -199,6 +216,11 @@ func buildGetSingleQueryString() string {
 //   - []model.Deck : A slice of model.Deck objects representing all decks.
 //   - error : An error if the retrieval fails, nil otherwise.
 func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
+	if wrapper.db == nil {
+		log.Fatal("Database connection is nil")
+		return nil, utils.ErrDatabaseNotExist
+	}
+
 	query := buildGetAllQueryString()
 	rows, err := wrapper.db.Query(query)
 	if err != nil {
@@ -231,6 +253,44 @@ func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
 	return decks, nil
 }
 
+// Counts the total number of decks in the database.
+//
+// Returns:
+//   - int : The total number of decks.
+//   - error : An error if the count fails, nil otherwise.
+func (wrapper *DeckDBWrapper) GetCount() (int, error) {
+	if wrapper.db == nil {
+		log.Fatal("Database connection is nil")
+		return 0, utils.ErrDatabaseNotExist
+	}
+
+	query := buildGetCountQueryString()
+	var count int
+
+	err := wrapper.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		log.Fatalf("Error getting deck count: %v", err)
+		return -1, err
+	}
+
+	return count, nil
+}
+
+// Helper function that constructs the SQL query string to count all decks.
+//
+// Returns:
+//   - string : The SQL query string to count all decks.
+func buildGetCountQueryString() string {
+	var sb strings.Builder
+	sb.WriteString("SELECT COUNT(")
+	sb.WriteString(deckColumnID)
+	sb.WriteString(") FROM ")
+	sb.WriteString(deckTableName)
+
+	query := sb.String()
+	return query
+}
+
 // Helper function that constructs the SQL query string to retrieve all decks.
 //
 // Returns:
@@ -260,6 +320,11 @@ func buildGetAllQueryString() string {
 // Returns:
 //   - error : An error if the modification fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
+	if wrapper.db == nil {
+		log.Fatal("Database connection is nil")
+		return utils.ErrDatabaseNotExist
+	}
+
 	// Modification date is set to the current time
 	deck.ModificationDate = time.Now()
 
@@ -304,6 +369,11 @@ func buildModifyQueryString() string {
 // Returns:
 //   - error : An error if the deletion fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Delete(id int) error {
+	if wrapper.db == nil {
+		log.Fatal("Database connection is nil")
+		return utils.ErrDatabaseNotExist
+	}
+
 	query := buildDeleteQueryString()
 	_, err := wrapper.db.Exec(query, id)
 	if err != nil {

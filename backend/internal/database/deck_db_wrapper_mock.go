@@ -61,6 +61,14 @@ func (wrapper *DeckDBWrapperMock) GetAll() ([]model.Deck, error) {
 	return decks, nil
 }
 
+func (wrapper *DeckDBWrapperMock) GetCount() (int, error) {
+	if wrapper.db == nil {
+		return 0, utils.ErrDatabaseNotExist
+	}
+
+	return len(wrapper.db), nil
+}
+
 func (wrapper *DeckDBWrapperMock) Modify(deck model.Deck) error {
 	if wrapper.db == nil {
 		return utils.ErrDatabaseNotExist
