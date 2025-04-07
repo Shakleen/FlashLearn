@@ -138,6 +138,15 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// HandleGetDeckCount handles the HTTP GET request for retrieving the count of decks.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+//
+// Errors:
+//   - 500 Internal Server Error : If there is an error while processing the request.
+//   - 200 OK : If the decks are found and the request is successful.
 func (s *APIServer) HandleGetDeckCount(w http.ResponseWriter, r *http.Request) {
 	// Fetch from database
 	count, err := s.db.GetCount()
@@ -156,6 +165,16 @@ func (s *APIServer) HandleGetDeckCount(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// HandleInsertDeck handles the HTTP POST request for inserting a new deck.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+//
+// Errors:
+//   - 400 Bad Request : If the request body is invalid or violates max length constraints.
+//   - 500 Internal Server Error : If there is an error while processing the request.
+//   - 200 OK : If the decks are found and the request is successful.
 func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	// Parse JSON data from request body
 	type InsertInput struct {
