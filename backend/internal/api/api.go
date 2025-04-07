@@ -43,6 +43,7 @@ func (s *APIServer) Start() error {
 
 	router := http.NewServeMux()
 	router.HandleFunc("/deck/{id}", s.HandleGetSingleDeck)
+	router.HandleFunc("/deck", s.HandleGetAllDecks)
 	s.server = &http.Server{
 		Addr:    s.address,
 		Handler: router,
@@ -97,6 +98,37 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 	encodingErr := json.NewEncoder(w).Encode(deck)
 	if encodingErr != nil {
 		http.Error(w, GetSingleDeckInternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandleGetAllDecks handles the HTTP GET request for retrieving all decks.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+//
+// Errors:
+//   - 500 Internal Server Error : If there is an error while processing the request.
+//   - 200 OK : If the decks are found and the request is successful.
+func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
+	// Fetch from database
+	deckArray, err := s.db.GetAll()
+	if err != nil {
+		if err == utils.ErrDatabaseNotExist {
+			http.Error(w, GetSingleDeckInternalServerErrorMessage, http.StatusInternalServerError)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Encode and send response
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(deckArray)
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
