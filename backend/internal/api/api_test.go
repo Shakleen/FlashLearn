@@ -69,13 +69,13 @@ func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithError() {
 			name:           "Internal server error for valid deck ID (database doesn't exist)",
 			deckID:         "1",
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   GetSingleDeckInternalServerErrorMessage + "\n",
+			expectedBody:   InternalServerErrorMessage + "\n",
 		},
 		{
 			name:           "Internal server error for valid deck ID (deck table doesn't exist)",
 			deckID:         "1",
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   GetSingleDeckInternalServerErrorMessage + "\n",
+			expectedBody:   InternalServerErrorMessage + "\n",
 		},
 	}
 
@@ -152,7 +152,7 @@ func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithValid() {
 
 func (suite *APIServerTestSuite) TestGetAllDecksHandlerWithError() {
 	expectedStatus := http.StatusInternalServerError
-	expectedBody := GetSingleDeckInternalServerErrorMessage + "\n"
+	expectedBody := InternalServerErrorMessage + "\n"
 
 	// Create a new request
 	req := httptest.NewRequest(http.MethodGet, "/deck", nil)
@@ -205,6 +205,79 @@ func (suite *APIServerTestSuite) TestGetAllDecksHandlerNonEmpty() {
 	suite.server.HandleGetAllDecks(rr, req)
 
 	jsonData, err := json.Marshal(decks)
+	if err != nil {
+		fmt.Println("Error marshaling to JSON:", err)
+		return
+	}
+
+	expectedBody := string(jsonData) + "\n"
+
+	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
+	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+}
+
+func (suite *APIServerTestSuite) TestGetDeckCountHandlerWithError() {
+	expectedStatus := http.StatusInternalServerError
+	expectedBody := InternalServerErrorMessage + "\n"
+
+	// Create a new request
+	req := httptest.NewRequest(http.MethodGet, "/deck", nil)
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	suite.server.HandleGetDeckCount(rr, req)
+
+	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
+	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+}
+
+func (suite *APIServerTestSuite) TestGetDeckCountHandlerEmpty() {
+	suite.db.CreateTable()
+
+	expectedStatus := http.StatusOK
+
+	// Create a new request
+	req := httptest.NewRequest(http.MethodGet, "/deck", nil)
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	suite.server.HandleGetDeckCount(rr, req)
+
+	jsonData, err := json.Marshal(map[string]int{"count": 0})
+	if err != nil {
+		fmt.Println("Error marshaling to JSON:", err)
+		return
+	}
+
+	expectedBody := string(jsonData) + "\n"
+
+	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
+	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+}
+
+func (suite *APIServerTestSuite) TestGetDeckCountHandlerNonEmpty() {
+	suite.db.CreateTable()
+
+	decks := []model.Deck{}
+	decks = append(decks, model.NewDeck("Deck #1", "This is a first deck"))
+	decks = append(decks, model.NewDeck("Deck #2", "This is a second deck"))
+
+	suite.db.Insert(decks[0])
+	suite.db.Insert(decks[1])
+
+	expectedStatus := http.StatusOK
+
+	// Create a new request
+	req := httptest.NewRequest(http.MethodGet, "/deck", nil)
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	suite.server.HandleGetDeckCount(rr, req)
+
+	jsonData, err := json.Marshal(map[string]int{"count": len(decks)})
 	if err != nil {
 		fmt.Println("Error marshaling to JSON:", err)
 		return

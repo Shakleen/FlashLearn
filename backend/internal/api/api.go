@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	GetSingleDeckInvalidDeckIDErrorMessage  string = "Invalid deck ID"
-	GetSingleDeckNotFoundErrorMessage       string = "Deck not found"
-	GetSingleDeckInternalServerErrorMessage string = "Internal server error"
+	GetSingleDeckInvalidDeckIDErrorMessage string = "Invalid deck ID"
+	GetSingleDeckNotFoundErrorMessage      string = "Deck not found"
+	InternalServerErrorMessage             string = "Internal server error"
 )
 
 type APIServer struct {
@@ -42,8 +42,9 @@ func (s *APIServer) Start() error {
 	}
 
 	router := http.NewServeMux()
-	router.HandleFunc("/deck/{id}", s.HandleGetSingleDeck)
-	router.HandleFunc("/deck", s.HandleGetAllDecks)
+	router.HandleFunc("GET /deck/{id}", s.HandleGetSingleDeck)
+	router.HandleFunc("GET /deck", s.HandleGetAllDecks)
+	router.HandleFunc("GET /deck/count", s.HandleGetDeckCount)
 	s.server = &http.Server{
 		Addr:    s.address,
 		Handler: router,
@@ -88,7 +89,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 		if dbErr == utils.ErrRecordNotExist {
 			http.Error(w, GetSingleDeckNotFoundErrorMessage, http.StatusBadRequest)
 		} else {
-			http.Error(w, GetSingleDeckInternalServerErrorMessage, http.StatusInternalServerError)
+			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -97,7 +98,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	encodingErr := json.NewEncoder(w).Encode(deck)
 	if encodingErr != nil {
-		http.Error(w, GetSingleDeckInternalServerErrorMessage, http.StatusInternalServerError)
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -117,7 +118,7 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 	deckArray, err := s.db.GetAll()
 	if err != nil {
 		if err == utils.ErrDatabaseNotExist {
-			http.Error(w, GetSingleDeckInternalServerErrorMessage, http.StatusInternalServerError)
+			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -128,7 +129,25 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(deckArray)
 	if err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *APIServer) HandleGetDeckCount(w http.ResponseWriter, r *http.Request) {
+	// Fetch from database
+	count, err := s.db.GetCount()
+	if err != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+
+	// Encode and send response
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(map[string]int{"count": count})
+	if err != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
