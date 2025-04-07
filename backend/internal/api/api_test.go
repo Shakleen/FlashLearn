@@ -6,8 +6,10 @@ import (
 	"flash-learn/internal/database"
 	"flash-learn/internal/model"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -284,6 +286,91 @@ func (suite *APIServerTestSuite) TestGetDeckCountHandlerNonEmpty() {
 	}
 
 	expectedBody := string(jsonData) + "\n"
+
+	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
+	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+}
+
+func (suite *APIServerTestSuite) TestInsertDeckHandlerWithError() {
+	testCases := []struct {
+		name           string
+		requestBody    string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "Bad Request (Empty request body)",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (corrupted request body)",
+			requestBody:    `{"name": "Interview Preparation", "description": "A deck containing cards for interview Preparation"`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (No name in request body)",
+			requestBody:    `{}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Name is empty space)",
+			requestBody:    `{"name": " "}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Name is longer than max length)",
+			requestBody:    `{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+		},
+		{
+			name: "Bad Request (Description is longer than max length)",
+			requestBody: `{"name": "a",
+			"description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InsertDeckInvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Database doesn't exist)",
+			requestBody:    `{"name": "Test Name", "description": "Test Description"}`,
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   InternalServerErrorMessage + "\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		// Create a new request
+		req := httptest.NewRequest(http.MethodGet, "/deck", nil)
+		req.Body = io.NopCloser(strings.NewReader(tc.requestBody))
+
+		// Create a ResponseRecorder to record the response
+		rr := httptest.NewRecorder()
+
+		suite.server.HandleInsertDeck(rr, req)
+
+		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
+		assert.Equal(suite.T(), tc.expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
+	}
+}
+
+func (suite *APIServerTestSuite) TestInsertDeckHandlerWithValid() {
+	suite.db.CreateTable()
+	expectedStatus := http.StatusOK
+	expectedBody := `{"id":0}` + "\n"
+
+	// Create a new request
+	req := httptest.NewRequest(http.MethodGet, "/deck", nil)
+	req.Body = io.NopCloser(strings.NewReader(`{"name": "Test Name", "description": "Test Description"}`))
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	suite.server.HandleInsertDeck(rr, req)
 
 	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())

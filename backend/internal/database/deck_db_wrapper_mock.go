@@ -35,7 +35,7 @@ func (wrapper *DeckDBWrapperMock) Insert(deck model.Deck) (int, error) {
 
 	wrapper.db[wrapper.index] = deck
 	wrapper.index++
-	return wrapper.index, nil
+	return wrapper.index - 1, nil
 }
 
 func (wrapper *DeckDBWrapperMock) GetSingle(deckID int) (model.Deck, error) {
