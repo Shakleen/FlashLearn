@@ -47,6 +47,8 @@ func (s *APIServer) Start() error {
 	router.HandleFunc("GET /deck/{id}", s.HandleGetSingleDeck)
 	router.HandleFunc("GET /deck", s.HandleGetAllDecks)
 	router.HandleFunc("GET /deck/count", s.HandleGetDeckCount)
+	router.HandleFunc("GET /deck/nameMaxLength", s.HandleGetDeckNameMaxLength)
+	router.HandleFunc("GET /deck/descriptionMaxLength", s.HandleGetDeckDescriptionMaxLength)
 	router.HandleFunc("POST /deck", s.HandleInsertDeck)
 	router.HandleFunc("POST /deck/{id}", s.HandleModifyDeck)
 	router.HandleFunc("DELETE /deck/{id}", s.HandleDeleteDeck)
@@ -361,6 +363,36 @@ func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	encodingErr := json.NewEncoder(w).Encode(map[string]int{"id": id})
 	if encodingErr != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandleGetDeckNameMaxLength handles the HTTP GET request for retrieving the max length of the deck name.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+func (s *APIServer) HandleGetDeckNameMaxLength(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(map[string]int{"maxLength": database.DeckColumnNameMaxLength})
+	if err != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandleGetDeckDescriptionMaxLength handles the HTTP GET request for retrieving the max length of the deck description.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+func (s *APIServer) HandleGetDeckDescriptionMaxLength(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(map[string]int{"maxLength": database.DeckColumnDescriptionMaxLength})
+	if err != nil {
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
