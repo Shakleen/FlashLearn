@@ -43,9 +43,18 @@ function App() {
   }));
 
   return (
-    <div>
-      <DeckList items={itemList} />
-    </div>
+    <>
+      <nav className="navbar bg-body-tertiary" data-bs-theme="dark">
+        <div className="container-fluid">
+          <a className="navbar-brand" href="#">
+            Navbar
+          </a>
+        </div>
+      </nav>
+      <div>
+        <DeckList items={itemList} />
+      </div>
+    </>
   );
 }
 
