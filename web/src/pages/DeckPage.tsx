@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import NavBar from "../components/NavBar";
 
 export interface DeckItem {
   id: string;
@@ -74,13 +75,7 @@ function DeckPage() {
 
   return (
     <>
-      <nav className="navbar bg-body-tertiary" data-bs-theme="dark">
-        <div className="container-fluid">
-          <Link to={"/"} className="navbar-brand">
-            Flash Learn
-          </Link>
-        </div>
-      </nav>
+      <NavBar />
       <div className="card text-center m-2">
         <div className="card-header">Last Studied: Never</div>
         <div className="card-body">

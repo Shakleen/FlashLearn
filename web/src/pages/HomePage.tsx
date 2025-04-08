@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import DeckList from "../components/DeckList";
 import { DeckItem } from "../components/DeckList";
-
+import NavBar from "../components/NavBar";
 function HomePage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -44,13 +44,7 @@ function HomePage() {
 
   return (
     <>
-      <nav className="navbar bg-body-tertiary" data-bs-theme="dark">
-        <div className="container-fluid">
-          <a className="navbar-brand" href="#">
-            Navbar
-          </a>
-        </div>
-      </nav>
+      <NavBar />
       <div>
         <DeckList items={itemList} />
       </div>
