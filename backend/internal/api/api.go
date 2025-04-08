@@ -51,11 +51,38 @@ func (s *APIServer) Start() error {
 	router.HandleFunc("POST /deck/{id}", s.HandleModifyDeck)
 	router.HandleFunc("DELETE /deck/{id}", s.HandleDeleteDeck)
 
+	corsHandler := corsMiddleware(router)
+
 	s.server = &http.Server{
 		Addr:    s.address,
-		Handler: router,
+		Handler: corsHandler,
 	}
 	return s.server.ListenAndServe()
+}
+
+// corsMiddleware adds CORS headers to the HTTP responses.
+//
+// Parameters:
+//   - handler http.Handler
+//
+// Returns:
+//   - http.Handler
+func corsMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers for all responses
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight OPTIONS requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Pass control to the next handler
+		handler.ServeHTTP(w, r)
+	})
 }
 
 // Stop stops the server if it is running.

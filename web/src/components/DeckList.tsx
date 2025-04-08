@@ -1,5 +1,5 @@
 export interface DeckItem {
-  id: string;
+  id: string | number;
   name: string;
   description: string;
 }
