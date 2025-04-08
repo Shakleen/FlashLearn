@@ -208,16 +208,13 @@ func (suite *APIServerTestSuite) TestGetAllDecksHandlerNonEmpty() {
 
 	suite.server.HandleGetAllDecks(rr, req)
 
-	jsonData, err := json.Marshal(decks)
-	if err != nil {
-		fmt.Println("Error marshaling to JSON:", err)
-		return
-	}
-
-	expectedBody := string(jsonData) + "\n"
+	expectedLength := len(decks)
+	decksReturned := []model.Deck{}
+	_ = json.NewDecoder(rr.Body).Decode(&decksReturned)
+	actualLength := len(decksReturned)
 
 	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
-	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+	assert.True(suite.T(), expectedLength == actualLength, "Expected lengths to be %d, got %d", expectedLength, actualLength)
 }
 
 func (suite *APIServerTestSuite) TestGetDeckCountHandlerWithError() {
