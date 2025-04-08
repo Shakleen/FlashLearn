@@ -73,11 +73,17 @@ function DeckPage() {
     result.modificationDate
   ).toLocaleDateString();
 
+  let lastStudyDateString = "Never";
+  const lastStudyYear = new Date(result.lastStudyDate).getFullYear();
+  if (lastStudyYear > 2000) {
+    lastStudyDateString = new Date(result.lastStudyDate).toLocaleDateString();
+  }
+
   return (
     <>
       <NavBar />
       <div className="card text-center m-2">
-        <div className="card-header">Last Studied: Never</div>
+        <div className="card-header">Last Studied: {lastStudyDateString}</div>
         <div className="card-body">
           <h5 className="card-title">{result.name}</h5>
           <p className="card-text">{result.description}</p>
