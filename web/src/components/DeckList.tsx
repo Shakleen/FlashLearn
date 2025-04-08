@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export interface DeckItem {
   id: string | number;
   name: string;
@@ -9,10 +11,6 @@ interface DeckListProps {
 }
 
 function DeckList(props: DeckListProps) {
-  const handleItemClick = (item: any) => {
-    console.log("Item clicked:", item);
-  };
-
   return (
     <>
       <ul className="list-group">
@@ -20,13 +18,14 @@ function DeckList(props: DeckListProps) {
           <li
             key={item.id}
             className="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
-            onClick={() => handleItemClick(item)}
             style={{ cursor: "pointer" }}
           >
-            <div className="ms-2 me-auto">
-              <div className="fw-bold">{item.name}</div>
-              {item.description}
-            </div>
+            <Link to={`/deck/${item.id}`}>
+              <div className="ms-2 me-auto">
+                <div className="fw-bold">{item.name}</div>
+                {item.description}
+              </div>
+            </Link>
           </li>
         ))}
       </ul>
