@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import DeckList from "./components/DeckList";
-import { DeckItem } from "./components/DeckList";
+import DeckList from "../components/DeckList";
+import { DeckItem } from "../components/DeckList";
 
-function App() {
+function HomePage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(``);
@@ -58,4 +58,4 @@ function App() {
   );
 }
 
-export default App;
+export default HomePage;
