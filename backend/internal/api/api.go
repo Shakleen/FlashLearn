@@ -158,9 +158,24 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type DeckOutput struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+
+	deckOutputArray := make([]DeckOutput, len(deckArray))
+	for i, deck := range deckArray {
+		deckOutputArray[i] = DeckOutput{
+			ID:          strconv.Itoa(deck.ID),
+			Name:        deck.Name,
+			Description: deck.Description,
+		}
+	}
+
 	// Encode and send response
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(deckArray)
+	err = json.NewEncoder(w).Encode(deckOutputArray)
 	if err != nil {
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
