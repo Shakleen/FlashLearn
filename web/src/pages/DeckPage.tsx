@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 export interface DeckItem {
@@ -67,21 +67,49 @@ function DeckPage() {
     return <div>No deck data found.</div>;
   }
 
+  const creationDateString = new Date(result.creationDate).toLocaleDateString();
+  const modificationDateString = new Date(
+    result.modificationDate
+  ).toLocaleDateString();
+
   return (
     <>
       <nav className="navbar bg-body-tertiary" data-bs-theme="dark">
         <div className="container-fluid">
-          <a className="navbar-brand" href="#">
+          <Link to={"/"} className="navbar-brand">
             Flash Learn
-          </a>
+          </Link>
         </div>
       </nav>
-      <h1>Deck: {result.name}</h1>
-      <p>Description: {result.description}</p>
-      <p>Created: {result.creationDate}</p>
-      <p>Modified: {result.modificationDate}</p>
-      <p>Last Studied: {result.lastStudyDate}</p>
-      <p>Total Cards: {result.totalCards}</p>
+      <div className="card text-center m-2">
+        <div className="card-header">Last Studied: Never</div>
+        <div className="card-body">
+          <h5 className="card-title">{result.name}</h5>
+          <p className="card-text">{result.description}</p>
+          <p className="card-text">
+            <small className="text-body-secondary">
+              Created: {creationDateString} <br />
+              Last updated: {modificationDateString} <br />
+              Total cards: {result.totalCards}
+            </small>
+          </p>
+          <div
+            className="btn-group mb-3"
+            role="group"
+            aria-label="Basic mixed styles example"
+          >
+            <Link to={"/"} className="btn btn-primary">
+              Study Now
+            </Link>
+            <button type="button" className="btn btn-secondary">
+              Edit
+            </button>
+            <button type="button" className="btn btn-danger">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
