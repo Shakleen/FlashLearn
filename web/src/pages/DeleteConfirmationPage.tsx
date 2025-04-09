@@ -1,20 +1,30 @@
 import NavBar from "../components/NavBar";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 function DeleteConfirmationPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const handleDelete = async () => {
-    const response = await fetch(`http://localhost:8080/deck/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`http://localhost:8080/deck/${id}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      throw new Error(`Http error! Status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Http error! Status: ${response.status}`);
+      }
+
+      toast.success("Deck deleted successfully");
+      navigate("/");
+    } catch (error) {
+      toast.error(
+        `Error deleting deck: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
-
-    navigate("/");
   };
 
   return (

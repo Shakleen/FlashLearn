@@ -116,7 +116,12 @@ func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
 	err := wrapper.db.QueryRow(query, deck.Name, deck.Description).Scan(&deck.ID)
 
 	if err != nil {
-		log.Fatalf("Error inserting deck: %v", err)
+		log.Printf("Error inserting deck: %v", err)
+
+		if err.Error() == "pq: duplicate key value violates unique constraint \"decks_name_key\"" {
+			return -1, utils.ErrDuplicateKeyViolation
+		}
+
 		return -1, err
 	}
 
@@ -246,7 +251,7 @@ func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
 			&deck.ID,
 			&deck.Name,
 			&deck.Description,
-			&deck.TotalCards)
+		)
 
 		if err != nil {
 			return nil, err
@@ -308,10 +313,11 @@ func buildGetAllQueryString() string {
 	sb.WriteString(deckColumnName)
 	sb.WriteString(", ")
 	sb.WriteString(deckColumnDescription)
-	sb.WriteString(", ")
-	sb.WriteString(deckColumnTotalCards)
 	sb.WriteString(" FROM ")
 	sb.WriteString(deckTableName)
+	sb.WriteString(" ORDER BY ")
+	sb.WriteString(deckColumnName)
+	sb.WriteString(" ASC")
 
 	query := sb.String()
 	return query
@@ -342,7 +348,12 @@ func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
 	_, err := wrapper.db.Exec(query, deck.Name, deck.Description, deck.ModificationDate, deck.ID)
 
 	if err != nil {
-		log.Fatalf("Error modifying deck: %v", err)
+		log.Printf("Error modifying deck: %v", err)
+
+		if err.Error() == "pq: duplicate key value violates unique constraint \"decks_name_key\"" {
+			return utils.ErrDuplicateKeyViolation
+		}
+
 		return err
 	}
 

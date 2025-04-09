@@ -20,9 +20,13 @@ function DeckList(props: DeckListProps) {
             className="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
             style={{ cursor: "pointer" }}
           >
-            <Link to={`/deck/${item.id}`}>
+            <Link
+              to={`/deck/${item.id}`}
+              state={{ deck: item }}
+              className="text-decoration-none"
+            >
               <div className="ms-2 me-auto">
-                <div className="fw-bold">{item.name}</div>
+                <div className="fw-bold fs-4">{item.name}</div>
                 {item.description}
               </div>
             </Link>

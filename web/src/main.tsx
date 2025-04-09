@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import DeckPage from "./pages/DeckPage.tsx";
 import DeckFormPage from "./pages/DeckFormPage.tsx";
 import DeleteConfirmationPage from "./pages/DeleteConfirmationPage.tsx";
+import { Toaster } from "sonner";
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> },
   { path: "/deck/:id", element: <DeckPage /> },
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <Toaster richColors />
     <RouterProvider router={router} />
   </StrictMode>
 );
