@@ -246,7 +246,7 @@ func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
 			&deck.ID,
 			&deck.Name,
 			&deck.Description,
-			&deck.TotalCards)
+		)
 
 		if err != nil {
 			return nil, err
@@ -308,10 +308,11 @@ func buildGetAllQueryString() string {
 	sb.WriteString(deckColumnName)
 	sb.WriteString(", ")
 	sb.WriteString(deckColumnDescription)
-	sb.WriteString(", ")
-	sb.WriteString(deckColumnTotalCards)
 	sb.WriteString(" FROM ")
 	sb.WriteString(deckTableName)
+	sb.WriteString(" ORDER BY ")
+	sb.WriteString(deckColumnName)
+	sb.WriteString(" ASC")
 
 	query := sb.String()
 	return query
