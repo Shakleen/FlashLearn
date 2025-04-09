@@ -179,7 +179,11 @@ async function handleSubmit(
     );
 
     if (!response.ok) {
-      throw new Error(`Http error! Status: ${response.status}`);
+      if (response.status === 409) {
+        throw new Error("Deck name already exists");
+      } else {
+        throw new Error(`HTTP Error`);
+      }
     }
 
     const toastMessage: string = `Deck ${

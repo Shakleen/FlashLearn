@@ -46,7 +46,9 @@ type DeckDBWrapper struct {
 // Returns:
 //   - *DeckDBWrapper
 func NewDeckDBWrapper(db *sql.DB) *DeckDBWrapper {
-	return &DeckDBWrapper{db: db}
+	obj := &DeckDBWrapper{db: db}
+	obj.CreateTable()
+	return obj
 }
 
 // Creates a new table in the database if it doesn't already exist.
@@ -116,7 +118,12 @@ func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
 	err := wrapper.db.QueryRow(query, deck.Name, deck.Description).Scan(&deck.ID)
 
 	if err != nil {
-		log.Fatalf("Error inserting deck: %v", err)
+		log.Printf("Error inserting deck: %v", err)
+
+		if err.Error() == "pq: duplicate key value violates unique constraint \"decks_name_key\"" {
+			return -1, utils.ErrDuplicateKeyViolation
+		}
+
 		return -1, err
 	}
 
@@ -343,7 +350,12 @@ func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
 	_, err := wrapper.db.Exec(query, deck.Name, deck.Description, deck.ModificationDate, deck.ID)
 
 	if err != nil {
-		log.Fatalf("Error modifying deck: %v", err)
+		log.Printf("Error modifying deck: %v", err)
+
+		if err.Error() == "pq: duplicate key value violates unique constraint \"decks_name_key\"" {
+			return utils.ErrDuplicateKeyViolation
+		}
+
 		return err
 	}
 

@@ -15,6 +15,7 @@ const (
 	InvalidBodyErrorMessage           string = "Invalid request body"
 	GetSingleDeckNotFoundErrorMessage string = "Deck not found"
 	InternalServerErrorMessage        string = "Internal server error"
+	DuplicateKeyViolationErrorMessage string = "Duplicate key violation"
 )
 
 type APIServer struct {
@@ -249,6 +250,8 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	if dbErr != nil {
 		if dbErr == utils.ErrMaxLengthExceeded {
 			http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		} else if dbErr == utils.ErrDuplicateKeyViolation {
+			http.Error(w, DuplicateKeyViolationErrorMessage, http.StatusConflict)
 		} else {
 			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		}
@@ -311,6 +314,8 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	if dbErr != nil {
 		if dbErr == utils.ErrMaxLengthExceeded {
 			http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		} else if dbErr == utils.ErrDuplicateKeyViolation {
+			http.Error(w, DuplicateKeyViolationErrorMessage, http.StatusConflict)
 		} else if dbErr == utils.ErrRecordNotExist {
 			http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		} else {
