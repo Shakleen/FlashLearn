@@ -7,8 +7,10 @@ import { toast } from "sonner";
 function DeckFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [nameMaxLength, setNameMaxLength] = useState(0);
-  const [descriptionMaxLength, setDescriptionMaxLength] = useState(0);
+  const [maxLengths, setMaxLengths] = useState<{
+    name: number;
+    description: number;
+  }>({ name: -1, description: -1 });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -16,14 +18,17 @@ function DeckFormPage() {
         "http://localhost:8080/deck/nameMaxLength"
       );
       const resultNameMaxLength = await responseNameMaxLength.json();
-      setNameMaxLength(resultNameMaxLength["maxLength"]);
 
       const responseDescriptionMaxLength = await fetch(
         "http://localhost:8080/deck/descriptionMaxLength"
       );
       const resultDescriptionMaxLength =
         await responseDescriptionMaxLength.json();
-      setDescriptionMaxLength(resultDescriptionMaxLength["maxLength"]);
+
+      setMaxLengths({
+        name: resultNameMaxLength["maxLength"],
+        description: resultDescriptionMaxLength["maxLength"],
+      });
     };
 
     fetchData();
@@ -72,11 +77,11 @@ function DeckFormPage() {
             name="deckName"
             aria-describedby="deckNameHelp"
             placeholder="Computer Science"
-            maxLength={nameMaxLength}
+            maxLength={maxLengths.name}
             required
           />
           <div id="deckNameHelp" className="form-text">
-            This is the name of the deck. <b>Max length: {nameMaxLength}</b>
+            This is the name of the deck. <b>Max length: {maxLengths.name}</b>
           </div>
         </div>
         <div className="mb-3">
@@ -88,11 +93,11 @@ function DeckFormPage() {
             className="form-control"
             name="deckDescription"
             placeholder="This a deck containing all the topics in computer science"
-            maxLength={descriptionMaxLength}
+            maxLength={maxLengths.description}
           />
           <div id="deckDescriptionHelp" className="form-text">
             This is the description of the deck.{" "}
-            <b>Max length: {descriptionMaxLength}</b>
+            <b>Max length: {maxLengths.description}</b>
           </div>
         </div>
         <button type="submit" className="btn btn-primary">
