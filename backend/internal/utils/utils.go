@@ -3,7 +3,7 @@ package utils
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -19,12 +19,14 @@ type Config struct {
 	SSLMode    string
 }
 
-func getPostgresConfig() Config {
+func getPostgresConfig() (Config, error) {
+	slog.Debug("Getting postgres config")
 	const envFileName string = "postgres.env"
 	err := godotenv.Load(envFileName)
 
 	if err != nil {
-		log.Fatalf("Error loading secret.env file: %v", err)
+		slog.Error("Error loading secret.env file", "error", err)
+		return Config{}, err
 	}
 
 	config := Config{
@@ -37,11 +39,16 @@ func getPostgresConfig() Config {
 		SSLMode:    os.Getenv("POSTGRES_SSL_MODE"),
 	}
 
-	return config
+	return config, nil
 }
 
-func ConnectToPostgres() *sql.DB {
-	config := getPostgresConfig()
+func ConnectToPostgres() (*sql.DB, error) {
+	config, err := getPostgresConfig()
+
+	if err != nil {
+		slog.Error("Error getting postgres config", "error", err)
+		return nil, err
+	}
 
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		config.UserName, config.Password, config.Host, config.Port, config.DbName, config.SSLMode)
@@ -49,11 +56,15 @@ func ConnectToPostgres() *sql.DB {
 	db, err := sql.Open(config.DriverName, connStr)
 
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Error connecting to postgres", "error", err)
+		return nil, err
 	}
 
 	if err = db.Ping(); err != nil {
-		log.Fatal(err)
+		slog.Error("Error pinging postgres", "error", err)
+		return nil, err
 	}
-	return db
+
+	slog.Info("Connected to postgres")
+	return db, nil
 }

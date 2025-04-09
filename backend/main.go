@@ -4,25 +4,35 @@ import (
 	"flash-learn/internal/api"
 	"flash-learn/internal/database"
 	"flash-learn/internal/utils"
-	"fmt"
+	"log/slog"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	db := utils.ConnectToPostgres()
+	logger := utils.GetLogger()
+	slog.SetDefault(logger)
+
+	slog.Info("Starting server")
+	db, err := utils.ConnectToPostgres()
+	if err != nil {
+		slog.Error("Error connecting to postgres", "error", err)
+		return
+	}
 	db_wrapper := database.NewDeckDBWrapper(db)
+
+	slog.Info("Creating table if not exists")
 	db_wrapper.CreateTable()
 
+	slog.Info("Starting API server")
 	server := api.NewAPIServer("localhost:8080", db_wrapper)
-	err := server.Start()
+	err = server.Start()
 
 	if err != nil {
-		fmt.Println("Error starting server:", err)
+		slog.Error("Error starting server", "error", err)
 		return
 	}
 
-	fmt.Println("Server started on localhost:8080")
-
+	slog.Info("Server started on localhost:8080")
 	defer db.Close()
 }
