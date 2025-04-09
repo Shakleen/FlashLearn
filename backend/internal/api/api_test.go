@@ -664,3 +664,35 @@ func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithValid() {
 		}
 	}
 }
+
+func (suite *APIServerTestSuite) TestGetDeckNameMaxLength() {
+	expectedStatus := http.StatusOK
+	expectedBody := `{"maxLength":64}` + "\n"
+
+	// Create a new request
+	req := httptest.NewRequest(http.MethodGet, "/deck/nameMaxLength", nil)
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	suite.server.HandleGetDeckNameMaxLength(rr, req)
+
+	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
+	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+}
+
+func (suite *APIServerTestSuite) TestGetDeckDescriptionMaxLength() {
+	expectedStatus := http.StatusOK
+	expectedBody := `{"maxLength":255}` + "\n"
+
+	// Create a new request
+	req := httptest.NewRequest(http.MethodGet, "/deck/descriptionMaxLength", nil)
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	suite.server.HandleGetDeckDescriptionMaxLength(rr, req)
+
+	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
+	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
+}
