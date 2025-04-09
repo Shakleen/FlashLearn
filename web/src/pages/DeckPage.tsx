@@ -119,7 +119,11 @@ function getBody(
             <Link to={"/"} className="btn btn-primary">
               Study Now
             </Link>
-            <Link to={`/deck/form/${id}`} className="btn btn-secondary">
+            <Link
+              to={`/deck/form/${id}`}
+              state={{ deck: result }}
+              className="btn btn-secondary"
+            >
               Edit
             </Link>
             <Link to={`/deck/delete/${id}`} className="btn btn-danger">
