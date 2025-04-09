@@ -105,9 +105,9 @@ function DeckPage() {
             <Link to={`/deck/form/${id}`} className="btn btn-secondary">
               Edit
             </Link>
-            <button type="button" className="btn btn-danger">
+            <Link to={`/deck/delete/${id}`} className="btn btn-danger">
               Delete
-            </button>
+            </Link>
           </div>
         </div>
       </div>
