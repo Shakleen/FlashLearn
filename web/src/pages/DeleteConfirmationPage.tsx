@@ -1,6 +1,7 @@
 import NavBar from "../components/NavBar";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 function DeleteConfirmationPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ function DeleteConfirmationPage() {
       throw new Error(`Http error! Status: ${response.status}`);
     }
 
+    toast.success("Deck deleted successfully");
     navigate("/");
   };
 

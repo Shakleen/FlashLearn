@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import NavBar from "../components/NavBar";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 function DeckFormPage() {
   const { id } = useParams();
@@ -55,6 +56,7 @@ function DeckFormPage() {
 
       const rawData = await response.json();
       deckID = rawData["id"];
+      toast.success("Deck created successfully");
     } else {
       // Update POST /deck/{id}
       const response = await fetch(`http://localhost:8080/deck/${deckID}`, {
@@ -71,6 +73,7 @@ function DeckFormPage() {
 
       const rawData = await response.json();
       deckID = rawData["id"];
+      toast.success("Deck updated successfully");
     }
 
     navigate(-1);
