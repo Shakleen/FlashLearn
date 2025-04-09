@@ -5,6 +5,7 @@ import (
 	"flash-learn/internal/database"
 	"flash-learn/internal/model"
 	"flash-learn/internal/utils"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -120,7 +121,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 	idStr := strings.Split(r.URL.Path, "/")[2]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		slog.Debug("Invalid deck ID %s", idStr, "error", err)
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
 		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -304,7 +305,7 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.Split(r.URL.Path, "/")[2]
 	deckID, err := strconv.Atoi(idStr)
 	if err != nil {
-		slog.Debug("Invalid deck ID %s", idStr, "error", err)
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
 		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -379,7 +380,7 @@ func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.Split(r.URL.Path, "/")[2]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		slog.Debug("Invalid deck ID %s", idStr, "error", err)
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
 		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
