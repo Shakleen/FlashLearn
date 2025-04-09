@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import DeckList from "../components/DeckList";
 import { DeckItem } from "../components/DeckList";
 import NavBar from "../components/NavBar";
+import { useNavigate } from "react-router-dom";
+
 function HomePage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(``);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,9 +48,18 @@ function HomePage() {
   return (
     <>
       <NavBar />
-      <div>
-        <DeckList items={itemList} />
-      </div>
+      <center>
+        <button
+          type="button"
+          className="btn btn-primary m-3"
+          onClick={() => {
+            navigate("/deck/form/-1");
+          }}
+        >
+          Create New Deck
+        </button>
+      </center>
+      <DeckList items={itemList} />
     </>
   );
 }
