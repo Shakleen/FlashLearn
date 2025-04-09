@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
+import Spinner from "../components/Spinner";
 
 export interface DeckItem {
   id: string;
@@ -78,7 +79,7 @@ function getBody(
   var body;
 
   if (loading) {
-    body = <div>Loading...</div>;
+    body = <Spinner />;
   } else if (error) {
     body = <div>{error}</div>;
   } else if (!result) {

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import NavBar from "../components/NavBar";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import Spinner from "../components/Spinner";
 
 function DeckFormPage() {
   const { id } = useParams();
@@ -48,7 +49,7 @@ function DeckFormPage() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <Spinner />;
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

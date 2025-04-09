@@ -4,10 +4,10 @@ import { DeckItem } from "../components/DeckList";
 import NavBar from "../components/NavBar";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
+import Spinner from "../components/Spinner";
 function HomePage() {
   const [data, setData] = useState<DeckItem[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -18,7 +18,7 @@ function HomePage() {
   var body;
 
   if (loading) {
-    body = <div>Loading...</div>;
+    body = <Spinner />;
   }
 
   if (error) {
