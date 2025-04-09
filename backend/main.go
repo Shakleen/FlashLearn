@@ -11,8 +11,10 @@ import (
 
 func main() {
 	db := utils.ConnectToPostgres()
+	db_wrapper := database.NewDeckDBWrapper(db)
+	db_wrapper.CreateTable()
 
-	server := api.NewAPIServer("localhost:8080", database.NewDeckDBWrapper(db))
+	server := api.NewAPIServer("localhost:8080", db_wrapper)
 	err := server.Start()
 
 	if err != nil {

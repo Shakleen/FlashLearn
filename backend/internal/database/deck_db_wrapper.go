@@ -46,9 +46,7 @@ type DeckDBWrapper struct {
 // Returns:
 //   - *DeckDBWrapper
 func NewDeckDBWrapper(db *sql.DB) *DeckDBWrapper {
-	obj := &DeckDBWrapper{db: db}
-	obj.CreateTable()
-	return obj
+	return &DeckDBWrapper{db: db}
 }
 
 // Creates a new table in the database if it doesn't already exist.
