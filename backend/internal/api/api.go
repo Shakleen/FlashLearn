@@ -5,6 +5,8 @@ import (
 	"flash-learn/internal/database"
 	"flash-learn/internal/model"
 	"flash-learn/internal/utils"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -44,6 +46,7 @@ func (s *APIServer) Start() error {
 		return nil
 	}
 
+	slog.Debug("Creating router")
 	router := http.NewServeMux()
 	router.HandleFunc("GET /deck/{id}", s.HandleGetSingleDeck)
 	router.HandleFunc("GET /deck", s.HandleGetAllDecks)
@@ -54,12 +57,15 @@ func (s *APIServer) Start() error {
 	router.HandleFunc("POST /deck/{id}", s.HandleModifyDeck)
 	router.HandleFunc("DELETE /deck/{id}", s.HandleDeleteDeck)
 
+	slog.Debug("Creating cors handler")
 	corsHandler := corsMiddleware(router)
 
 	s.server = &http.Server{
 		Addr:    s.address,
 		Handler: corsHandler,
 	}
+
+	slog.Debug("Starting server")
 	return s.server.ListenAndServe()
 }
 
@@ -115,6 +121,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 	idStr := strings.Split(r.URL.Path, "/")[2]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
 		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -123,8 +130,10 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 	deck, dbErr := s.db.GetSingle(id)
 	if dbErr != nil {
 		if dbErr == utils.ErrRecordNotExist {
+			slog.Debug("Deck not found", "error", dbErr)
 			http.Error(w, GetSingleDeckNotFoundErrorMessage, http.StatusBadRequest)
 		} else {
+			slog.Debug("Error getting single deck", "error", dbErr)
 			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		}
 		return
@@ -138,6 +147,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	slog.Debug("Sent response", "deck", deck)
 }
 
 // HandleGetAllDecks handles the HTTP GET request for retrieving all decks.
@@ -153,6 +163,7 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 	// Fetch from database
 	deckArray, err := s.db.GetAll()
 	if err != nil {
+		slog.Debug("Error getting all decks", "error", err)
 		if err == utils.ErrDatabaseNotExist {
 			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		} else {
@@ -184,6 +195,7 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	slog.Debug("Sent response", "deck", deckOutputArray)
 }
 
 // HandleGetDeckCount handles the HTTP GET request for retrieving the count of decks.
@@ -199,6 +211,7 @@ func (s *APIServer) HandleGetDeckCount(w http.ResponseWriter, r *http.Request) {
 	// Fetch from database
 	count, err := s.db.GetCount()
 	if err != nil {
+		slog.Debug("Error getting deck count", "error", err)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
@@ -207,10 +220,12 @@ func (s *APIServer) HandleGetDeckCount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(map[string]int{"count": count})
 	if err != nil {
+		slog.Debug("Error encoding deck count", "error", err)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	slog.Debug("Sent response", "deck count", count)
 }
 
 // HandleInsertDeck handles the HTTP POST request for inserting a new deck.
@@ -232,6 +247,7 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	var bodyInput InsertInput
 	err := json.NewDecoder(r.Body).Decode(&bodyInput)
 	if err != nil {
+		slog.Debug("Error decoding request body", "error", err)
 		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -240,6 +256,7 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	bodyInput.Name = strings.TrimSpace(bodyInput.Name)
 	bodyInput.Description = strings.TrimSpace(bodyInput.Description)
 	if bodyInput.Name == "" {
+		slog.Debug("Invalid body input", "error", err)
 		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -249,10 +266,13 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	deckID, dbErr := s.db.Insert(deck)
 	if dbErr != nil {
 		if dbErr == utils.ErrMaxLengthExceeded {
+			slog.Debug("Max length exceeded", "error", dbErr)
 			http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		} else if dbErr == utils.ErrDuplicateKeyViolation {
+			slog.Debug("Duplicate key violation", "error", dbErr)
 			http.Error(w, DuplicateKeyViolationErrorMessage, http.StatusConflict)
 		} else {
+			slog.Debug("Error inserting deck", "error", dbErr)
 			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		}
 		return
@@ -262,10 +282,12 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(map[string]int{"id": deckID})
 	if err != nil {
+		slog.Debug("Error encoding deck ID", "error", err)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	slog.Debug("Sent response", "deck ID", deckID)
 }
 
 // HandleModifyDeck handles the HTTP POST request for modifying an existing deck.
@@ -283,6 +305,7 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.Split(r.URL.Path, "/")[2]
 	deckID, err := strconv.Atoi(idStr)
 	if err != nil {
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
 		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -295,6 +318,7 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	var bodyInput InsertInput
 	err = json.NewDecoder(r.Body).Decode(&bodyInput)
 	if err != nil {
+		slog.Debug("Error decoding request body", "error", err)
 		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -303,6 +327,7 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	bodyInput.Name = strings.TrimSpace(bodyInput.Name)
 	bodyInput.Description = strings.TrimSpace(bodyInput.Description)
 	if bodyInput.Name == "" {
+		slog.Debug("Invalid body input", "error", err)
 		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -313,12 +338,16 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	dbErr := s.db.Modify(deck)
 	if dbErr != nil {
 		if dbErr == utils.ErrMaxLengthExceeded {
+			slog.Debug("Max length exceeded", "error", dbErr)
 			http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		} else if dbErr == utils.ErrDuplicateKeyViolation {
+			slog.Debug("Duplicate key violation", "error", dbErr)
 			http.Error(w, DuplicateKeyViolationErrorMessage, http.StatusConflict)
 		} else if dbErr == utils.ErrRecordNotExist {
+			slog.Debug("Record not exist", "error", dbErr)
 			http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		} else {
+			slog.Debug("Error modifying deck", "error", dbErr)
 			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		}
 		return
@@ -328,10 +357,12 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(map[string]int{"id": deckID})
 	if err != nil {
+		slog.Debug("Error encoding deck ID", "error", err)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	slog.Debug("Sent response", "deck ID", deckID)
 }
 
 // HandleDeleteDeck handles the HTTP GET request for deleting a single deck.
@@ -349,6 +380,7 @@ func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.Split(r.URL.Path, "/")[2]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
 		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		return
 	}
@@ -357,8 +389,10 @@ func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 	dbErr := s.db.Delete(id)
 	if dbErr != nil {
 		if dbErr == utils.ErrRecordNotExist {
+			slog.Debug("Record not exist", "error", dbErr)
 			http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
 		} else {
+			slog.Debug("Error deleting deck", "error", dbErr)
 			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		}
 		return
@@ -368,10 +402,12 @@ func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	encodingErr := json.NewEncoder(w).Encode(map[string]int{"id": id})
 	if encodingErr != nil {
+		slog.Debug("Error encoding deck ID", "error", encodingErr)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	slog.Debug("Sent response", "deck ID", id)
 }
 
 // HandleGetDeckNameMaxLength handles the HTTP GET request for retrieving the max length of the deck name.
@@ -383,10 +419,12 @@ func (s *APIServer) HandleGetDeckNameMaxLength(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(map[string]int{"maxLength": database.DeckColumnNameMaxLength})
 	if err != nil {
+		slog.Debug("Error encoding deck name max length", "error", err)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	slog.Debug("Sent response", "deck name max length", database.DeckColumnNameMaxLength)
 }
 
 // HandleGetDeckDescriptionMaxLength handles the HTTP GET request for retrieving the max length of the deck description.
@@ -398,8 +436,10 @@ func (s *APIServer) HandleGetDeckDescriptionMaxLength(w http.ResponseWriter, r *
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(map[string]int{"maxLength": database.DeckColumnDescriptionMaxLength})
 	if err != nil {
+		slog.Debug("Error encoding deck description max length", "error", err)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	slog.Debug("Sent response", "deck description max length", database.DeckColumnDescriptionMaxLength)
 }

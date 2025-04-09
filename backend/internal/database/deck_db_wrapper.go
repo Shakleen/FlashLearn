@@ -5,7 +5,7 @@ import (
 	"flash-learn/internal/model"
 	"flash-learn/internal/utils"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 )
@@ -55,16 +55,17 @@ func NewDeckDBWrapper(db *sql.DB) *DeckDBWrapper {
 //   - error : An error if the table creation fails, nil otherwise.
 func (wrapper *DeckDBWrapper) CreateTable() error {
 	if wrapper.db == nil {
-		log.Fatal("Database connection is nil")
+		slog.Error("Database connection is nil")
 		return utils.ErrDatabaseNotExist
 	}
 
 	query := buildCreateTableQueryString()
+	slog.Debug("Creating decks table", "query", query)
 
 	_, err := wrapper.db.Exec(query)
 
 	if err != nil {
-		log.Fatalf("Error creating decks table: %v", err)
+		slog.Error("Error creating decks table", "error", err)
 	}
 
 	return err
@@ -86,7 +87,7 @@ func buildCreateTableQueryString() string {
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnCreationDate))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnModificationDate))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP, ", deckColumnLastStudyDate))
-	sb.WriteString(fmt.Sprintf("%s INT DEFAULT 0", deckColumnTotalCards))
+	sb.WriteString(fmt.Sprintf("%s INT DEFAULT 0 CHECK (%s >= 0)", deckColumnTotalCards, deckColumnTotalCards))
 	sb.WriteString(")")
 
 	query := sb.String()
@@ -103,20 +104,21 @@ func buildCreateTableQueryString() string {
 //   - error : An error if the insertion fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
 	if len(deck.Name) > DeckColumnNameMaxLength || len(deck.Description) > DeckColumnDescriptionMaxLength {
-		log.Fatal("Deck name or description exceeds maximum length")
+		slog.Error("Deck name or description exceeds maximum length")
 		return -1, utils.ErrMaxLengthExceeded
 	}
 
 	if wrapper.db == nil {
-		log.Fatal("Database connection is nil")
+		slog.Error("Database connection is nil")
 		return -1, utils.ErrDatabaseNotExist
 	}
 
 	query := buildInsertQueryString()
+	slog.Debug("Inserting deck", "query", query)
 	err := wrapper.db.QueryRow(query, deck.Name, deck.Description).Scan(&deck.ID)
 
 	if err != nil {
-		log.Printf("Error inserting deck: %v", err)
+		slog.Error("Error inserting deck", "error", err)
 
 		if err.Error() == "pq: duplicate key value violates unique constraint \"decks_name_key\"" {
 			return -1, utils.ErrDuplicateKeyViolation
@@ -124,6 +126,8 @@ func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
 
 		return -1, err
 	}
+
+	slog.Debug(fmt.Sprintf("Inserted deck %d", deck.ID))
 
 	return deck.ID, nil
 }
@@ -157,7 +161,7 @@ func buildInsertQueryString() string {
 //   - error : An error if the retrieval fails, nil otherwise.
 func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
 	if wrapper.db == nil {
-		log.Fatal("Database connection is nil")
+		slog.Error("Database connection is nil")
 		return model.Deck{}, utils.ErrDatabaseNotExist
 	}
 
@@ -165,6 +169,7 @@ func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
 	var lastStudyDate sql.NullTime
 
 	query := buildGetSingleQueryString()
+	slog.Debug("Getting single deck", "query", query)
 
 	err := wrapper.db.QueryRow(query, deckID).Scan(
 		&deck.ID,
@@ -175,9 +180,10 @@ func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
 		&deck.TotalCards)
 
 	if err != nil {
+		slog.Error("Error getting single deck", "error", err)
 		return model.Deck{}, err
 	} else if err == sql.ErrNoRows {
-		log.Printf("No deck found with ID: %d", deckID)
+		slog.Error(fmt.Sprintf("No deck found with ID %d", deckID))
 		return model.Deck{}, err
 	}
 
@@ -186,6 +192,7 @@ func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
 	} else {
 		deck.LastStudyDate = time.Time{}
 	}
+	slog.Debug("Updated deck last study date", "lastStudyDate", lastStudyDate)
 
 	return deck, nil
 }
@@ -227,16 +234,19 @@ func buildGetSingleQueryString() string {
 //   - error : An error if the retrieval fails, nil otherwise.
 func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
 	if wrapper.db == nil {
-		log.Fatal("Database connection is nil")
+		slog.Error("Database connection is nil")
 		return nil, utils.ErrDatabaseNotExist
 	}
 
 	query := buildGetAllQueryString()
+	slog.Debug("Getting all decks", "query", query)
+
 	rows, err := wrapper.db.Query(query)
 	if err != nil {
+		slog.Error("Error getting all decks", "error", err)
 		return nil, err
 	} else if err == sql.ErrNoRows {
-		log.Printf("No decks found")
+		slog.Error("No decks found")
 		return nil, err
 	}
 
@@ -260,6 +270,8 @@ func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
 		decks = append(decks, deck)
 	}
 
+	slog.Debug(fmt.Sprintf("Fetched %d decks", len(decks)))
+
 	return decks, nil
 }
 
@@ -270,18 +282,22 @@ func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
 //   - error : An error if the count fails, nil otherwise.
 func (wrapper *DeckDBWrapper) GetCount() (int, error) {
 	if wrapper.db == nil {
-		log.Fatal("Database connection is nil")
+		slog.Error("Database connection is nil")
 		return 0, utils.ErrDatabaseNotExist
 	}
 
 	query := buildGetCountQueryString()
+	slog.Debug("Getting deck count", "query", query)
+
 	var count int
 
 	err := wrapper.db.QueryRow(query).Scan(&count)
 	if err != nil {
-		log.Fatalf("Error getting deck count: %v", err)
+		slog.Error("Error getting deck count", "error", err)
 		return -1, err
 	}
+
+	slog.Debug(fmt.Sprintf("Deck count: %d", count))
 
 	return count, nil
 }
@@ -332,12 +348,12 @@ func buildGetAllQueryString() string {
 //   - error : An error if the modification fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
 	if len(deck.Name) > DeckColumnNameMaxLength || len(deck.Description) > DeckColumnDescriptionMaxLength {
-		log.Fatal("Deck name or description exceeds maximum length")
+		slog.Error("Deck name or description exceeds maximum length")
 		return utils.ErrMaxLengthExceeded
 	}
 
 	if wrapper.db == nil {
-		log.Fatal("Database connection is nil")
+		slog.Error("Database connection is nil")
 		return utils.ErrDatabaseNotExist
 	}
 
@@ -345,10 +361,12 @@ func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
 	deck.ModificationDate = time.Now()
 
 	query := buildModifyQueryString()
+	slog.Debug("Modifying deck", "query", query)
+
 	_, err := wrapper.db.Exec(query, deck.Name, deck.Description, deck.ModificationDate, deck.ID)
 
 	if err != nil {
-		log.Printf("Error modifying deck: %v", err)
+		slog.Error("Error modifying deck", "error", err)
 
 		if err.Error() == "pq: duplicate key value violates unique constraint \"decks_name_key\"" {
 			return utils.ErrDuplicateKeyViolation
@@ -356,6 +374,8 @@ func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
 
 		return err
 	}
+
+	slog.Debug(fmt.Sprintf("Modified deck %d", deck.ID))
 
 	return nil
 }
@@ -391,16 +411,20 @@ func buildModifyQueryString() string {
 //   - error : An error if the deletion fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Delete(id int) error {
 	if wrapper.db == nil {
-		log.Fatal("Database connection is nil")
+		slog.Error("Database connection is nil")
 		return utils.ErrDatabaseNotExist
 	}
 
 	query := buildDeleteQueryString()
+	slog.Debug("Deleting deck", "query", query)
+
 	_, err := wrapper.db.Exec(query, id)
 	if err != nil {
-		log.Fatalf("Error deleting deck: %v", err)
+		slog.Error("Error deleting deck", "error", err)
 		return err
 	}
+
+	slog.Debug(fmt.Sprintf("Deleted deck %d", id))
 
 	return nil
 }
