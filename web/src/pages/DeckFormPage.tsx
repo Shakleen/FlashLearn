@@ -37,44 +37,23 @@ function DeckFormPage() {
     const deckName = payload["deckName"];
     const deckDescription = payload["deckDescription"];
 
-    var deckID = parseInt(id || "-1");
-    console.log(deckID);
+    const deckID: number = parseInt(id || "-1");
 
-    if (deckID == -1) {
-      // Insert POST /deck
-      const response = await fetch("http://localhost:8080/deck", {
-        method: "POST",
-        body: JSON.stringify({
-          name: deckName,
-          description: deckDescription,
-        }),
-      });
+    const response = await HandlePostRequest(
+      deckID,
+      deckName as string,
+      deckDescription as string
+    );
 
-      if (!response.ok) {
-        throw new Error(`Http error! Status: ${response.status}`);
-      }
-
-      const rawData = await response.json();
-      deckID = rawData["id"];
-      toast.success("Deck created successfully");
-    } else {
-      // Update POST /deck/{id}
-      const response = await fetch(`http://localhost:8080/deck/${deckID}`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: deckName,
-          description: deckDescription,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Http error! Status: ${response.status}`);
-      }
-
-      const rawData = await response.json();
-      deckID = rawData["id"];
-      toast.success("Deck updated successfully");
+    if (!response.ok) {
+      throw new Error(`Http error! Status: ${response.status}`);
     }
+
+    const rawData = await response.json();
+    const toastMessage: string = `Deck ${
+      rawData["id"] == -1 ? "created" : "updated"
+    } successfully`;
+    toast.success(toastMessage);
 
     navigate(-1);
   };
@@ -130,6 +109,23 @@ function DeckFormPage() {
         </button>
       </form>
     </>
+  );
+}
+
+async function HandlePostRequest(
+  deckID: number,
+  deckName: string,
+  deckDescription: string
+) {
+  return fetch(
+    "http://localhost:8080/deck" + (deckID == -1 ? "" : `/${deckID}`),
+    {
+      method: "POST",
+      body: JSON.stringify({
+        name: deckName,
+        description: deckDescription,
+      }),
+    }
   );
 }
 
