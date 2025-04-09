@@ -18,8 +18,8 @@ const deckColumnCreationDate string = "creation_date"
 const deckColumnModificationDate string = "modification_date"
 const deckColumnLastStudyDate string = "last_study_date"
 const deckColumnTotalCards string = "total_cards"
-const deckColumnNameMaxLength int = 64
-const deckColumnDescriptionMaxLength int = 255
+const DeckColumnNameMaxLength int = 64
+const DeckColumnDescriptionMaxLength int = 255
 
 // An interface that defines the methods for interacting with the database.
 // This interface abstracts the database operations for decks,
@@ -81,8 +81,8 @@ func buildCreateTableQueryString() string {
 	sb.WriteString(deckTableName)
 	sb.WriteString(" (")
 	sb.WriteString(fmt.Sprintf("%s SERIAL PRIMARY KEY, ", deckColumnID))
-	sb.WriteString(fmt.Sprintf("%s VARCHAR(%d) NOT NULL UNIQUE, ", deckColumnName, deckColumnNameMaxLength))
-	sb.WriteString(fmt.Sprintf("%s VARCHAR(%d) NOT NULL, ", deckColumnDescription, deckColumnDescriptionMaxLength))
+	sb.WriteString(fmt.Sprintf("%s VARCHAR(%d) NOT NULL UNIQUE, ", deckColumnName, DeckColumnNameMaxLength))
+	sb.WriteString(fmt.Sprintf("%s VARCHAR(%d) NOT NULL, ", deckColumnDescription, DeckColumnDescriptionMaxLength))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnCreationDate))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnModificationDate))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP, ", deckColumnLastStudyDate))
@@ -102,7 +102,7 @@ func buildCreateTableQueryString() string {
 //   - int : The unique ID of the inserted deck.
 //   - error : An error if the insertion fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
-	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+	if len(deck.Name) > DeckColumnNameMaxLength || len(deck.Description) > DeckColumnDescriptionMaxLength {
 		log.Fatal("Deck name or description exceeds maximum length")
 		return -1, utils.ErrMaxLengthExceeded
 	}
@@ -325,7 +325,7 @@ func buildGetAllQueryString() string {
 // Returns:
 //   - error : An error if the modification fails, nil otherwise.
 func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
-	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+	if len(deck.Name) > DeckColumnNameMaxLength || len(deck.Description) > DeckColumnDescriptionMaxLength {
 		log.Fatal("Deck name or description exceeds maximum length")
 		return utils.ErrMaxLengthExceeded
 	}

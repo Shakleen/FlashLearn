@@ -47,15 +47,44 @@ func (s *APIServer) Start() error {
 	router.HandleFunc("GET /deck/{id}", s.HandleGetSingleDeck)
 	router.HandleFunc("GET /deck", s.HandleGetAllDecks)
 	router.HandleFunc("GET /deck/count", s.HandleGetDeckCount)
+	router.HandleFunc("GET /deck/nameMaxLength", s.HandleGetDeckNameMaxLength)
+	router.HandleFunc("GET /deck/descriptionMaxLength", s.HandleGetDeckDescriptionMaxLength)
 	router.HandleFunc("POST /deck", s.HandleInsertDeck)
 	router.HandleFunc("POST /deck/{id}", s.HandleModifyDeck)
 	router.HandleFunc("DELETE /deck/{id}", s.HandleDeleteDeck)
 
+	corsHandler := corsMiddleware(router)
+
 	s.server = &http.Server{
 		Addr:    s.address,
-		Handler: router,
+		Handler: corsHandler,
 	}
 	return s.server.ListenAndServe()
+}
+
+// corsMiddleware adds CORS headers to the HTTP responses.
+//
+// Parameters:
+//   - handler http.Handler
+//
+// Returns:
+//   - http.Handler
+func corsMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers for all responses
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight OPTIONS requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Pass control to the next handler
+		handler.ServeHTTP(w, r)
+	})
 }
 
 // Stop stops the server if it is running.
@@ -131,9 +160,24 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type DeckOutput struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+
+	deckOutputArray := make([]DeckOutput, len(deckArray))
+	for i, deck := range deckArray {
+		deckOutputArray[i] = DeckOutput{
+			ID:          strconv.Itoa(deck.ID),
+			Name:        deck.Name,
+			Description: deck.Description,
+		}
+	}
+
 	// Encode and send response
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(deckArray)
+	err = json.NewEncoder(w).Encode(deckOutputArray)
 	if err != nil {
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
@@ -319,6 +363,36 @@ func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	encodingErr := json.NewEncoder(w).Encode(map[string]int{"id": id})
 	if encodingErr != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandleGetDeckNameMaxLength handles the HTTP GET request for retrieving the max length of the deck name.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+func (s *APIServer) HandleGetDeckNameMaxLength(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(map[string]int{"maxLength": database.DeckColumnNameMaxLength})
+	if err != nil {
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandleGetDeckDescriptionMaxLength handles the HTTP GET request for retrieving the max length of the deck description.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+func (s *APIServer) HandleGetDeckDescriptionMaxLength(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(map[string]int{"maxLength": database.DeckColumnDescriptionMaxLength})
+	if err != nil {
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}

@@ -25,7 +25,7 @@ func (wrapper *DeckDBWrapperMock) CreateTable() error {
 }
 
 func (wrapper *DeckDBWrapperMock) Insert(deck model.Deck) (int, error) {
-	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+	if len(deck.Name) > DeckColumnNameMaxLength || len(deck.Description) > DeckColumnDescriptionMaxLength {
 		return -1, utils.ErrMaxLengthExceeded
 	}
 
@@ -75,7 +75,7 @@ func (wrapper *DeckDBWrapperMock) GetCount() (int, error) {
 }
 
 func (wrapper *DeckDBWrapperMock) Modify(deck model.Deck) error {
-	if len(deck.Name) > deckColumnNameMaxLength || len(deck.Description) > deckColumnDescriptionMaxLength {
+	if len(deck.Name) > DeckColumnNameMaxLength || len(deck.Description) > DeckColumnDescriptionMaxLength {
 		return utils.ErrMaxLengthExceeded
 	}
 
