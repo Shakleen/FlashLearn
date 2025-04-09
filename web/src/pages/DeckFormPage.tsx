@@ -11,56 +11,83 @@ function DeckFormPage() {
     name: number;
     description: number;
   }>({ name: -1, description: -1 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const responseNameMaxLength = await fetch(
-        "http://localhost:8080/deck/nameMaxLength"
-      );
-      const resultNameMaxLength = await responseNameMaxLength.json();
+      setLoading(true);
 
-      const responseDescriptionMaxLength = await fetch(
-        "http://localhost:8080/deck/descriptionMaxLength"
-      );
-      const resultDescriptionMaxLength =
-        await responseDescriptionMaxLength.json();
+      try {
+        const responseNameMaxLength = await fetch(
+          "http://localhost:8080/deck/nameMaxLength"
+        );
+        const resultNameMaxLength = await responseNameMaxLength.json();
 
-      setMaxLengths({
-        name: resultNameMaxLength["maxLength"],
-        description: resultDescriptionMaxLength["maxLength"],
-      });
+        const responseDescriptionMaxLength = await fetch(
+          "http://localhost:8080/deck/descriptionMaxLength"
+        );
+        const resultDescriptionMaxLength =
+          await responseDescriptionMaxLength.json();
+
+        setMaxLengths({
+          name: resultNameMaxLength["maxLength"],
+          description: resultDescriptionMaxLength["maxLength"],
+        });
+      } catch (error) {
+        toast.error(
+          `Error fetching data: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
   }, []);
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setLoading(true);
 
-    const formData = new FormData(event.target as HTMLFormElement);
-    const payload = Object.fromEntries(formData);
-    const deckName = payload["deckName"];
-    const deckDescription = payload["deckDescription"];
+    try {
+      const formData = new FormData(event.target as HTMLFormElement);
+      const payload = Object.fromEntries(formData);
+      const deckName = payload["deckName"];
+      const deckDescription = payload["deckDescription"];
 
-    const deckID: number = parseInt(id || "-1");
+      const deckID: number = parseInt(id || "-1");
 
-    const response = await HandlePostRequest(
-      deckID,
-      deckName as string,
-      deckDescription as string
-    );
+      const response = await HandlePostRequest(
+        deckID,
+        deckName as string,
+        deckDescription as string
+      );
 
-    if (!response.ok) {
-      throw new Error(`Http error! Status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Http error! Status: ${response.status}`);
+      }
+
+      const toastMessage: string = `Deck ${
+        deckID == -1 ? "created" : "updated"
+      } successfully`;
+      toast.success(toastMessage);
+
+      navigate(-1);
+    } catch (error) {
+      toast.error(
+        `Error submitting form: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setLoading(false);
     }
-
-    const rawData = await response.json();
-    const toastMessage: string = `Deck ${
-      rawData["id"] == -1 ? "created" : "updated"
-    } successfully`;
-    toast.success(toastMessage);
-
-    navigate(-1);
   };
 
   return (
