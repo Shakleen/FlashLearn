@@ -44,7 +44,7 @@ function DeleteConfirmationPage() {
             onClick={() => {
               navigate(-1);
             }}
-            className="btn btn-secondary m-2"
+            className="btn btn-light m-2"
           >
             Cancel
           </button>

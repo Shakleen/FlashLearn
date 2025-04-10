@@ -23,9 +23,22 @@ function DeckPage() {
     fetchData(setLoading, setError, setResult, id);
   }, [id]);
 
+  const rightComponents = [
+    <Link
+      to={`/deck/form/${id}`}
+      state={{ deck: result }}
+      className="btn btn-light"
+    >
+      Edit
+    </Link>,
+    <Link to={`/deck/delete/${id}`} className="btn btn-danger">
+      Delete
+    </Link>,
+  ];
+
   return (
     <>
-      <NavBar />
+      <NavBar rightComponents={rightComponents} />
       {getBody(loading, error, result, id)}
     </>
   );
@@ -102,8 +115,8 @@ function getBody(
       <div className="card text-center m-2">
         <div className="card-header">Last Studied: {lastStudyDateString}</div>
         <div className="card-body">
-          <h5 className="card-title">{result.name}</h5>
-          <p className="card-text">{result.description}</p>
+          <h5 className="card-title fw-bold fs-2">{result.name}</h5>
+          <p className="card-text fs-5">{result.description}</p>
           <p className="card-text">
             <small className="text-body-secondary">
               Created: {creationDateString} <br />
@@ -111,25 +124,13 @@ function getBody(
               Total cards: {result.totalCards}
             </small>
           </p>
-          <div
-            className="btn-group mb-3"
-            role="group"
-            aria-label="Basic mixed styles example"
+          <Link
+            to={"/"}
+            className="btn btn-primary mx-2"
+            style={{ width: "120px" }}
           >
-            <Link to={"/"} className="btn btn-primary">
-              Study Now
-            </Link>
-            <Link
-              to={`/deck/form/${id}`}
-              state={{ deck: result }}
-              className="btn btn-secondary"
-            >
-              Edit
-            </Link>
-            <Link to={`/deck/delete/${id}`} className="btn btn-danger">
-              Delete
-            </Link>
-          </div>
+            Study Now
+          </Link>
         </div>
       </div>
     );

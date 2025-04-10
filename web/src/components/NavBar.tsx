@@ -1,12 +1,24 @@
 import { Link } from "react-router-dom";
+import { ReactNode } from "react";
 
-function NavBar() {
+interface NavBarProps {
+  rightComponents?: ReactNode[];
+}
+
+function NavBar({ rightComponents = [] }: NavBarProps) {
   return (
-    <nav className="navbar bg-body-tertiary" data-bs-theme="dark">
+    <nav className="navbar bg-primary" data-bs-theme="dark">
       <div className="container-fluid">
-        <Link to={"/"} className="navbar-brand">
+        <Link to={"/"} className="navbar-brand text-light">
           Flash Learn
         </Link>
+        <div className="d-flex align-items-center gap-2">
+          {rightComponents.map((component, index) => (
+            <div key={index} className="text-light">
+              {component}
+            </div>
+          ))}
+        </div>
       </div>
     </nav>
   );
