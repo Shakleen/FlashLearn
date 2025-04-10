@@ -10,7 +10,6 @@ export interface DeckItem {
   creationDate: string;
   modificationDate: string;
   lastStudyDate: string;
-  totalCards: number;
 }
 
 function DeckPage() {
@@ -68,7 +67,6 @@ async function fetchData(
       creationDate: rawData.creation_date || "",
       modificationDate: rawData.modification_date || "",
       lastStudyDate: rawData.last_study_date || "",
-      totalCards: rawData.total_cards || 0,
     };
 
     setResult(deckData);
@@ -120,8 +118,7 @@ function getBody(
           <p className="card-text">
             <small className="text-body-secondary">
               Created: {creationDateString} <br />
-              Last updated: {modificationDateString} <br />
-              Total cards: {result.totalCards}
+              Last updated: {modificationDateString}
             </small>
           </p>
           <Link

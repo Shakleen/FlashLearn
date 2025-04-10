@@ -18,7 +18,6 @@ const (
 	deckColumnCreationDate         = "creation_date"
 	deckColumnModificationDate     = "modification_date"
 	deckColumnLastStudyDate        = "last_study_date"
-	deckColumnTotalCards           = "total_cards"
 	DeckColumnNameMaxLength        = 64
 	DeckColumnDescriptionMaxLength = 255
 )
@@ -88,8 +87,7 @@ func (wrapper *DeckDBWrapper) buildCreateTableQueryString() string {
 	sb.WriteString(fmt.Sprintf("%s VARCHAR(%d) NOT NULL, ", deckColumnDescription, DeckColumnDescriptionMaxLength))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnCreationDate))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", deckColumnModificationDate))
-	sb.WriteString(fmt.Sprintf("%s TIMESTAMP, ", deckColumnLastStudyDate))
-	sb.WriteString(fmt.Sprintf("%s INT DEFAULT 0 CHECK (%s >= 0)", deckColumnTotalCards, deckColumnTotalCards))
+	sb.WriteString(fmt.Sprintf("%s TIMESTAMP ", deckColumnLastStudyDate))
 	sb.WriteString(")")
 
 	query := sb.String()
@@ -178,8 +176,8 @@ func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
 		&deck.Name,
 		&deck.Description,
 		&deck.CreationDate,
-		&deck.ModificationDate, &lastStudyDate,
-		&deck.TotalCards)
+		&deck.ModificationDate,
+		&lastStudyDate)
 
 	if err != nil {
 		slog.Error("Error getting single deck", "error", err)
@@ -217,8 +215,6 @@ func (wrapper *DeckDBWrapper) buildGetSingleQueryString() string {
 	sb.WriteString(deckColumnModificationDate)
 	sb.WriteString(", ")
 	sb.WriteString(deckColumnLastStudyDate)
-	sb.WriteString(", ")
-	sb.WriteString(deckColumnTotalCards)
 	sb.WriteString(" FROM ")
 	sb.WriteString(deckTableName)
 	sb.WriteString(" WHERE ")

@@ -33,7 +33,6 @@ func TestNewDeck(t *testing.T) {
 
 			assert.Equal(t, test.name, deck.Name)
 			assert.Equal(t, test.description, deck.Description)
-			assert.Equal(t, 0, deck.TotalCards)
 
 			assert.IsType(t, time.Time{}, deck.CreationDate)
 			timeDiff := timeNow.Sub(deck.CreationDate)

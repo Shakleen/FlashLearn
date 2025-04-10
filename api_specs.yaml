@@ -130,9 +130,6 @@ paths:
                     type: string
                     format: date-time
                     example: "2023-04-07T09:15:00Z"
-                  total_cards:
-                    type: integer
-                    example: 42
         '400':
           description: Invalid ID or deck not found
           content:
