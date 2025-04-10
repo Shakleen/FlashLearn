@@ -719,6 +719,41 @@ func (suite *APIServerTestSuite) TestInsertCardHandlerWithError() {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   InvalidDeckIDErrorMessage + "\n",
 		},
+		{
+			name:           "Bad Request (empty request body)",
+			deckID:         "1",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Mandatory field missing)",
+			deckID:         "1",
+			requestBody:    "{}",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Content is null)",
+			deckID:         "1",
+			requestBody:    `{"content": null}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Content missing fields)",
+			deckID:         "1",
+			requestBody:    `{"content": "{}"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Front and back are empty)",
+			deckID:         "1",
+			requestBody:    `{"content": {"front": "", "back": ""}}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidBodyErrorMessage + "\n",
+		},
 	}
 
 	for _, tc := range testCases {

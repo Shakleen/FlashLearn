@@ -449,7 +449,36 @@ func (s *APIServer) HandleInsertCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Parse content body
+	// Parse content body
+	type InsertInput struct {
+		Content string `json:"content"`
+		Source  string `json:"source"`
+	}
+	var bodyInput InsertInput
+	err = json.NewDecoder(r.Body).Decode(&bodyInput)
+	if err != nil {
+		slog.Debug("Error decoding request body", "error", err)
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
+	} else if bodyInput.Content == "" {
+		slog.Debug("Missing mandatory field content")
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// Decode content to ensure it has fields front and back
+	var content map[string]interface{}
+	err = json.Unmarshal([]byte(bodyInput.Content), &content)
+	if err != nil {
+		slog.Debug("Error decoding content", "error", err)
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
+	} else if content["front"] == nil || content["back"] == nil {
+		slog.Debug("Missing fields front or back")
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
+	}
+
 	// 3. Insert using card_db
 	// 4. Encode and send response
 
