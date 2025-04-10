@@ -439,6 +439,16 @@ func (s *APIServer) HandleGetDeckDescriptionMaxLength(w http.ResponseWriter, r *
 	slog.Debug("Sent response", "deck description max length", database.DeckColumnDescriptionMaxLength)
 }
 
+// HandleInsertCard handles the HTTP POST request for inserting a new card into a deck.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+//
+// Errors:
+//   - 400 Bad Request : If the deck ID is invalid or the request body is invalid.
+//   - 500 Internal Server Error : If there is an error while processing the request.
+//   - 200 OK : If the card is found and the request is successful.
 func (s *APIServer) HandleInsertCard(w http.ResponseWriter, r *http.Request) {
 	// Parse ID from URL
 	idStr := strings.Split(r.URL.Path, "/")[2]
@@ -511,4 +521,43 @@ func (s *APIServer) HandleInsertCard(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Debug(fmt.Sprintf("Sent response, card ID: %d", cardID))
 	w.WriteHeader(http.StatusCreated)
+}
+
+// HandleGetTotalCards handles the HTTP GET request for retrieving the total number of cards in a deck.
+//
+// Parameters:
+//   - w http.ResponseWriter : The response writer to send the response.
+//   - r *http.Request : The HTTP request containing the deck ID in the URL path.
+//
+// Errors:
+//   - 400 Bad Request : If the deck ID is invalid.
+//   - 500 Internal Server Error : If there is an error while processing the request.
+//   - 200 OK : If the total number of cards is found and the request is successful.
+func (s *APIServer) HandleGetTotalCards(w http.ResponseWriter, r *http.Request) {
+	// Parse ID from URL
+	idStr := strings.Split(r.URL.Path, "/")[2]
+	deckID, err := strconv.Atoi(idStr)
+	if err != nil {
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
+		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// Fetch from database
+	count, dbErr := s.card_db.GetTotalCards(deckID)
+	if dbErr != nil {
+		slog.Debug("Error getting total cards", "error", dbErr)
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+
+	// Encode and send response
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(map[string]int{"total": count})
+	if err != nil {
+		slog.Debug("Error encoding total cards", "error", err)
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

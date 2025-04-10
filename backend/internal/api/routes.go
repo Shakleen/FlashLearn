@@ -30,4 +30,5 @@ func addDeckRoutes(router *http.ServeMux, s *APIServer) {
 //   - s *APIServer
 func addCardRoutes(router *http.ServeMux, s *APIServer) {
 	router.HandleFunc("POST /deck/{id}/card", s.HandleInsertCard)
+	router.HandleFunc("GET /deck/{id}/card/total", s.HandleGetTotalCards)
 }

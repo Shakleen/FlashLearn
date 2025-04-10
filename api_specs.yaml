@@ -293,6 +293,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /deck/{id}/card/total:
+    get:
+      summary: Get total number of cards in deck with id
+      operationId: getTotalCards
+      responses:
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '200':
+          description: Total number of cards in deck
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 42
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     Error:

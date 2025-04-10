@@ -31,6 +31,7 @@ const (
 type CardDBWrapperInterface interface {
 	CreateTable() error
 	Insert(card model.Card) (int, error)
+	GetTotalCards(deckID int) (int, error)
 }
 
 // A struct that implements the CardDBWrapperInterface.
@@ -142,6 +143,33 @@ func (wrapper *CardDBWrapper) buildInsertQueryString(card model.Card) string {
 	sb.WriteString(fmt.Sprintf("%s, %s, %s", cardColumnDeckID, cardColumnContent, cardColumnSource))
 	sb.WriteString(") VALUES ($1, $2, $3) RETURNING ")
 	sb.WriteString(cardColumnID)
+
+	query := sb.String()
+	return query
+}
+
+func (wrapper *CardDBWrapper) GetTotalCards(deckID int) (int, error) {
+	query := wrapper.buildGetTotalCardsQueryString(deckID)
+	slog.Debug(fmt.Sprintf("Getting total cards: %s", query))
+
+	var count int
+	err := wrapper.db.QueryRow(query, deckID).Scan(&count)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Error getting total cards: %s", err))
+		return 0, err
+	}
+	return count, nil
+}
+
+func (wrapper *CardDBWrapper) buildGetTotalCardsQueryString(deckID int) string {
+	var sb strings.Builder
+	sb.WriteString("SELECT COUNT( ")
+	sb.WriteString(cardColumnID)
+	sb.WriteString(") FROM ")
+	sb.WriteString(cardTableName)
+	sb.WriteString(" WHERE ")
+	sb.WriteString(cardColumnDeckID)
+	sb.WriteString(" = $1")
 
 	query := sb.String()
 	return query

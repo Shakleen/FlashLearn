@@ -40,10 +40,10 @@ func (wrapper *CardDBWrapperMock) InsertDeck(deckID int) {
 	wrapper.db[deckID] = make(map[int]model.Card)
 }
 
-func (wrapper *CardDBWrapperMock) GetCardCount(deckID int) (int, error) {
+func (wrapper *CardDBWrapperMock) GetTotalCards(deckID int) (int, error) {
 	_, ok := wrapper.db[deckID]
 	if !ok {
-		return 0, utils.ErrDeckNotExist
+		return 0, nil
 	}
 	return len(wrapper.db[deckID]), nil
 }
