@@ -696,3 +696,42 @@ func (suite *APIServerTestSuite) TestGetDeckDescriptionMaxLength() {
 	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
+
+func (suite *APIServerTestSuite) TestInsertCardHandlerWithError() {
+	testCases := []struct {
+		name           string
+		deckID         string
+		requestBody    string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "Bad Request (Deck ID not number)",
+			deckID:         "a",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+		{
+			name:           "Bad Request (Deck ID not number)",
+			deckID:         "1a",
+			requestBody:    "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   InvalidDeckIDErrorMessage + "\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		// Create a new request
+		req := httptest.NewRequest(http.MethodGet, "/deck/"+tc.deckID+"/card", nil)
+		req.Body = io.NopCloser(strings.NewReader(tc.requestBody))
+
+		// Create a ResponseRecorder to record the response
+		rr := httptest.NewRecorder()
+
+		suite.server.HandleInsertCard(rr, req)
+
+		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
+		assert.Equal(suite.T(), tc.expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
+	}
+}

@@ -438,3 +438,20 @@ func (s *APIServer) HandleGetDeckDescriptionMaxLength(w http.ResponseWriter, r *
 	w.WriteHeader(http.StatusOK)
 	slog.Debug("Sent response", "deck description max length", database.DeckColumnDescriptionMaxLength)
 }
+
+func (s *APIServer) HandleInsertCard(w http.ResponseWriter, r *http.Request) {
+	// Parse ID from URL
+	idStr := strings.Split(r.URL.Path, "/")[2]
+	_, err := strconv.Atoi(idStr)
+	if err != nil {
+		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
+		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// 2. Parse content body
+	// 3. Insert using card_db
+	// 4. Encode and send response
+
+	w.WriteHeader(http.StatusCreated)
+}
