@@ -22,7 +22,8 @@ const (
 
 type APIServer struct {
 	address string
-	db      database.DBWrapper
+	deck_db database.DBWrapper
+	card_db database.CardDBWrapperInterface
 	server  *http.Server
 }
 
@@ -30,10 +31,11 @@ type APIServer struct {
 // It initializes the server with the given address and database wrapper.
 // The address is the server's listening address, and the db is the database wrapper
 // used for database operations.
-func NewAPIServer(address string, db database.DBWrapper) *APIServer {
+func NewAPIServer(address string, deck_db database.DBWrapper, card_db database.CardDBWrapperInterface) *APIServer {
 	return &APIServer{
 		address: address,
-		db:      db,
+		deck_db: deck_db,
+		card_db: card_db,
 	}
 }
 
@@ -127,7 +129,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Fetch from database
-	deck, dbErr := s.db.GetSingle(id)
+	deck, dbErr := s.deck_db.GetSingle(id)
 	if dbErr != nil {
 		if dbErr == utils.ErrRecordNotExist {
 			slog.Debug("Deck not found", "error", dbErr)
@@ -161,7 +163,7 @@ func (s *APIServer) HandleGetSingleDeck(w http.ResponseWriter, r *http.Request) 
 //   - 200 OK : If the decks are found and the request is successful.
 func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 	// Fetch from database
-	deckArray, err := s.db.GetAll()
+	deckArray, err := s.deck_db.GetAll()
 	if err != nil {
 		slog.Debug("Error getting all decks", "error", err)
 		if err == utils.ErrDatabaseNotExist {
@@ -209,7 +211,7 @@ func (s *APIServer) HandleGetAllDecks(w http.ResponseWriter, r *http.Request) {
 //   - 200 OK : If the decks are found and the request is successful.
 func (s *APIServer) HandleGetDeckCount(w http.ResponseWriter, r *http.Request) {
 	// Fetch from database
-	count, err := s.db.GetCount()
+	count, err := s.deck_db.GetCount()
 	if err != nil {
 		slog.Debug("Error getting deck count", "error", err)
 		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
@@ -263,7 +265,7 @@ func (s *APIServer) HandleInsertDeck(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into database
 	deck := model.NewDeck(bodyInput.Name, bodyInput.Description)
-	deckID, dbErr := s.db.Insert(deck)
+	deckID, dbErr := s.deck_db.Insert(deck)
 	if dbErr != nil {
 		if dbErr == utils.ErrMaxLengthExceeded {
 			slog.Debug("Max length exceeded", "error", dbErr)
@@ -335,7 +337,7 @@ func (s *APIServer) HandleModifyDeck(w http.ResponseWriter, r *http.Request) {
 	// Modify row in database
 	deck := model.NewDeck(bodyInput.Name, bodyInput.Description)
 	deck.ID = deckID
-	dbErr := s.db.Modify(deck)
+	dbErr := s.deck_db.Modify(deck)
 	if dbErr != nil {
 		if dbErr == utils.ErrMaxLengthExceeded {
 			slog.Debug("Max length exceeded", "error", dbErr)
@@ -386,7 +388,7 @@ func (s *APIServer) HandleDeleteDeck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch from database
-	dbErr := s.db.Delete(id)
+	dbErr := s.deck_db.Delete(id)
 	if dbErr != nil {
 		if dbErr == utils.ErrRecordNotExist {
 			slog.Debug("Record not exist", "error", dbErr)

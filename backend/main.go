@@ -20,12 +20,14 @@ func main() {
 		return
 	}
 	db_wrapper := database.NewDeckDBWrapper(db)
+	card_db_wrapper := database.NewCardDBWrapper(db)
 
 	slog.Info("Creating table if not exists")
 	db_wrapper.CreateTable()
+	card_db_wrapper.CreateTable()
 
 	slog.Info("Starting API server")
-	server := api.NewAPIServer("localhost:8080", db_wrapper)
+	server := api.NewAPIServer("localhost:8080", db_wrapper, card_db_wrapper)
 	err = server.Start()
 
 	if err != nil {

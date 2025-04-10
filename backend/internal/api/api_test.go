@@ -28,7 +28,7 @@ type APIServerTestSuite struct {
 func (suite *APIServerTestSuite) SetupTest() {
 	suite.address = "localhost:8080"
 	suite.db = database.NewDeckDBWrapperMock()
-	suite.server = NewAPIServer(suite.address, suite.db)
+	suite.server = NewAPIServer(suite.address, suite.db, nil)
 }
 
 func (suite *APIServerTestSuite) TearDownTest() {
@@ -37,7 +37,7 @@ func (suite *APIServerTestSuite) TearDownTest() {
 
 func (suite *APIServerTestSuite) TestNewAPIServer() {
 	assert.Equal(suite.T(), suite.address, suite.server.address, "Expected address to be set correctly")
-	assert.NotNil(suite.T(), suite.server.db, "Expected db to be initialized")
+	assert.NotNil(suite.T(), suite.server.deck_db, "Expected db to be initialized")
 }
 
 func TestAPIServerTestSuite(t *testing.T) {
@@ -523,7 +523,7 @@ func (suite *APIServerTestSuite) TestModifyDeckHandlerWithNotEmpty() {
 
 		if i > 0 {
 			deckID, _ := strconv.Atoi(tc.deckID)
-			deck, _ := suite.server.db.GetSingle(deckID)
+			deck, _ := suite.server.deck_db.GetSingle(deckID)
 			assert.Equal(
 				suite.T(),
 				"Modified Name",
@@ -659,7 +659,7 @@ func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithValid() {
 		assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 
 		if i > 1 {
-			count, _ := suite.server.db.GetCount()
+			count, _ := suite.server.deck_db.GetCount()
 			assert.True(suite.T(), count == 1, "Expected length of database to be %d but got %d", 1, count)
 		}
 	}
