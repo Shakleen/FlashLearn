@@ -18,33 +18,33 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type APIServerTestSuite struct {
+type APIDeckServerTestSuite struct {
 	suite.Suite
 	address string
 	db      *database.DeckDBWrapperMock
 	server  *APIServer
 }
 
-func (suite *APIServerTestSuite) SetupTest() {
+func (suite *APIDeckServerTestSuite) SetupTest() {
 	suite.address = "localhost:8080"
 	suite.db = database.NewDeckDBWrapperMock()
 	suite.server = NewAPIServer(suite.address, suite.db, nil)
 }
 
-func (suite *APIServerTestSuite) TearDownTest() {
+func (suite *APIDeckServerTestSuite) TearDownTest() {
 	suite.server = nil
 }
 
-func (suite *APIServerTestSuite) TestNewAPIServer() {
+func (suite *APIDeckServerTestSuite) TestNewAPIServer() {
 	assert.Equal(suite.T(), suite.address, suite.server.address, "Expected address to be set correctly")
 	assert.NotNil(suite.T(), suite.server.deck_db, "Expected db to be initialized")
 }
 
 func TestAPIServerTestSuite(t *testing.T) {
-	suite.Run(t, new(APIServerTestSuite))
+	suite.Run(t, new(APIDeckServerTestSuite))
 }
 
-func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithError() {
+func (suite *APIDeckServerTestSuite) TestGetSingleDeckHandlerWithError() {
 	testCases := []struct {
 		name           string
 		deckID         string
@@ -100,7 +100,7 @@ func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithError() {
 	}
 }
 
-func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithValid() {
+func (suite *APIDeckServerTestSuite) TestGetSingleDeckHandlerWithValid() {
 	suite.db.CreateTable()
 
 	decks := []model.Deck{}
@@ -154,7 +154,7 @@ func (suite *APIServerTestSuite) TestGetSingleDeckHandlerWithValid() {
 	}
 }
 
-func (suite *APIServerTestSuite) TestGetAllDecksHandlerWithError() {
+func (suite *APIDeckServerTestSuite) TestGetAllDecksHandlerWithError() {
 	expectedStatus := http.StatusInternalServerError
 	expectedBody := InternalServerErrorMessage + "\n"
 
@@ -170,7 +170,7 @@ func (suite *APIServerTestSuite) TestGetAllDecksHandlerWithError() {
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
 
-func (suite *APIServerTestSuite) TestGetAllDecksHandlerEmpty() {
+func (suite *APIDeckServerTestSuite) TestGetAllDecksHandlerEmpty() {
 	suite.db.CreateTable()
 
 	expectedStatus := http.StatusOK
@@ -188,7 +188,7 @@ func (suite *APIServerTestSuite) TestGetAllDecksHandlerEmpty() {
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
 
-func (suite *APIServerTestSuite) TestGetAllDecksHandlerNonEmpty() {
+func (suite *APIDeckServerTestSuite) TestGetAllDecksHandlerNonEmpty() {
 	suite.db.CreateTable()
 
 	decks := []model.Deck{}
@@ -217,7 +217,7 @@ func (suite *APIServerTestSuite) TestGetAllDecksHandlerNonEmpty() {
 	assert.True(suite.T(), expectedLength == actualLength, "Expected lengths to be %d, got %d", expectedLength, actualLength)
 }
 
-func (suite *APIServerTestSuite) TestGetDeckCountHandlerWithError() {
+func (suite *APIDeckServerTestSuite) TestGetDeckCountHandlerWithError() {
 	expectedStatus := http.StatusInternalServerError
 	expectedBody := InternalServerErrorMessage + "\n"
 
@@ -233,7 +233,7 @@ func (suite *APIServerTestSuite) TestGetDeckCountHandlerWithError() {
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
 
-func (suite *APIServerTestSuite) TestGetDeckCountHandlerEmpty() {
+func (suite *APIDeckServerTestSuite) TestGetDeckCountHandlerEmpty() {
 	suite.db.CreateTable()
 
 	expectedStatus := http.StatusOK
@@ -258,7 +258,7 @@ func (suite *APIServerTestSuite) TestGetDeckCountHandlerEmpty() {
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
 
-func (suite *APIServerTestSuite) TestGetDeckCountHandlerNonEmpty() {
+func (suite *APIDeckServerTestSuite) TestGetDeckCountHandlerNonEmpty() {
 	suite.db.CreateTable()
 
 	decks := []model.Deck{}
@@ -290,7 +290,7 @@ func (suite *APIServerTestSuite) TestGetDeckCountHandlerNonEmpty() {
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
 
-func (suite *APIServerTestSuite) TestInsertDeckHandlerWithError() {
+func (suite *APIDeckServerTestSuite) TestInsertDeckHandlerWithError() {
 	testCases := []struct {
 		name           string
 		requestBody    string
@@ -357,7 +357,7 @@ func (suite *APIServerTestSuite) TestInsertDeckHandlerWithError() {
 	}
 }
 
-func (suite *APIServerTestSuite) TestInsertDeckHandlerWithValid() {
+func (suite *APIDeckServerTestSuite) TestInsertDeckHandlerWithValid() {
 	suite.db.CreateTable()
 	expectedStatus := http.StatusOK
 	expectedBody := `{"id":0}` + "\n"
@@ -375,7 +375,7 @@ func (suite *APIServerTestSuite) TestInsertDeckHandlerWithValid() {
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
 
-func (suite *APIServerTestSuite) TestModifyDeckHandlerWithError() {
+func (suite *APIDeckServerTestSuite) TestModifyDeckHandlerWithError() {
 	testCases := []struct {
 		name           string
 		deckID         string
@@ -473,7 +473,7 @@ func (suite *APIServerTestSuite) TestModifyDeckHandlerWithError() {
 	}
 }
 
-func (suite *APIServerTestSuite) TestModifyDeckHandlerWithNotEmpty() {
+func (suite *APIDeckServerTestSuite) TestModifyDeckHandlerWithNotEmpty() {
 	suite.db.CreateTable()
 
 	decks := []model.Deck{}
@@ -547,7 +547,7 @@ func (suite *APIServerTestSuite) TestModifyDeckHandlerWithNotEmpty() {
 	}
 }
 
-func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithError() {
+func (suite *APIDeckServerTestSuite) TestDeleteDeckHandlerWithError() {
 	testCases := []struct {
 		name           string
 		deckID         string
@@ -603,7 +603,7 @@ func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithError() {
 	}
 }
 
-func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithValid() {
+func (suite *APIDeckServerTestSuite) TestDeleteDeckHandlerWithValid() {
 	suite.db.CreateTable()
 
 	decks := []model.Deck{}
@@ -665,7 +665,7 @@ func (suite *APIServerTestSuite) TestDeleteDeckHandlerWithValid() {
 	}
 }
 
-func (suite *APIServerTestSuite) TestGetDeckNameMaxLength() {
+func (suite *APIDeckServerTestSuite) TestGetDeckNameMaxLength() {
 	expectedStatus := http.StatusOK
 	expectedBody := `{"maxLength":64}` + "\n"
 
@@ -681,7 +681,7 @@ func (suite *APIServerTestSuite) TestGetDeckNameMaxLength() {
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
 }
 
-func (suite *APIServerTestSuite) TestGetDeckDescriptionMaxLength() {
+func (suite *APIDeckServerTestSuite) TestGetDeckDescriptionMaxLength() {
 	expectedStatus := http.StatusOK
 	expectedBody := `{"maxLength":255}` + "\n"
 
@@ -695,78 +695,4 @@ func (suite *APIServerTestSuite) TestGetDeckDescriptionMaxLength() {
 
 	assert.Equal(suite.T(), expectedStatus, rr.Code, "Expected status code to be %d, got %d", expectedStatus, rr.Code)
 	assert.Equal(suite.T(), expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", expectedBody, rr.Body.String())
-}
-
-func (suite *APIServerTestSuite) TestInsertCardHandlerWithError() {
-	testCases := []struct {
-		name           string
-		deckID         string
-		requestBody    string
-		expectedStatus int
-		expectedBody   string
-	}{
-		{
-			name:           "Bad Request (Deck ID not number)",
-			deckID:         "a",
-			requestBody:    "",
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InvalidDeckIDErrorMessage + "\n",
-		},
-		{
-			name:           "Bad Request (Deck ID not number)",
-			deckID:         "1a",
-			requestBody:    "",
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InvalidDeckIDErrorMessage + "\n",
-		},
-		{
-			name:           "Bad Request (empty request body)",
-			deckID:         "1",
-			requestBody:    "",
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InvalidBodyErrorMessage + "\n",
-		},
-		{
-			name:           "Bad Request (Mandatory field missing)",
-			deckID:         "1",
-			requestBody:    "{}",
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InvalidBodyErrorMessage + "\n",
-		},
-		{
-			name:           "Bad Request (Content is null)",
-			deckID:         "1",
-			requestBody:    `{"content": null}`,
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InvalidBodyErrorMessage + "\n",
-		},
-		{
-			name:           "Bad Request (Content missing fields)",
-			deckID:         "1",
-			requestBody:    `{"content": "{}"}`,
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InvalidBodyErrorMessage + "\n",
-		},
-		{
-			name:           "Bad Request (Front and back are empty)",
-			deckID:         "1",
-			requestBody:    `{"content": {"front": "", "back": ""}}`,
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   InvalidBodyErrorMessage + "\n",
-		},
-	}
-
-	for _, tc := range testCases {
-		// Create a new request
-		req := httptest.NewRequest(http.MethodGet, "/deck/"+tc.deckID+"/card", nil)
-		req.Body = io.NopCloser(strings.NewReader(tc.requestBody))
-
-		// Create a ResponseRecorder to record the response
-		rr := httptest.NewRecorder()
-
-		suite.server.HandleInsertCard(rr, req)
-
-		assert.Equal(suite.T(), tc.expectedStatus, rr.Code, "Expected status code to be %d, got %d", tc.expectedStatus, rr.Code)
-		assert.Equal(suite.T(), tc.expectedBody, rr.Body.String(), "Expected response body to be '%s', got '%s'", tc.expectedBody, rr.Body.String())
-	}
 }
