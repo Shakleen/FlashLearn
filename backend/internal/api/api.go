@@ -442,7 +442,7 @@ func (s *APIServer) HandleGetDeckDescriptionMaxLength(w http.ResponseWriter, r *
 func (s *APIServer) HandleInsertCard(w http.ResponseWriter, r *http.Request) {
 	// Parse ID from URL
 	idStr := strings.Split(r.URL.Path, "/")[2]
-	_, err := strconv.Atoi(idStr)
+	deckID, err := strconv.Atoi(idStr)
 	if err != nil {
 		slog.Debug(fmt.Sprintf("Invalid deck ID %s", idStr))
 		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
@@ -450,9 +450,13 @@ func (s *APIServer) HandleInsertCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse content body
+	type Content struct {
+		Fields []string `json:"fields"`
+		Values []string `json:"values"`
+	}
 	type InsertInput struct {
-		Content string `json:"content"`
-		Source  string `json:"source"`
+		Content Content `json:"content"`
+		Source  string  `json:"source"`
 	}
 	var bodyInput InsertInput
 	err = json.NewDecoder(r.Body).Decode(&bodyInput)
@@ -460,27 +464,51 @@ func (s *APIServer) HandleInsertCard(w http.ResponseWriter, r *http.Request) {
 		slog.Debug("Error decoding request body", "error", err)
 		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
-	} else if bodyInput.Content == "" {
+	} else if bodyInput.Content.Fields == nil || bodyInput.Content.Values == nil {
 		slog.Debug("Missing mandatory field content")
 		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
 		return
+	} else if len(bodyInput.Content.Fields) != len(bodyInput.Content.Values) {
+		slog.Debug("Fields and values length mismatch")
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
+	} else if len(bodyInput.Content.Fields) == 0 || len(bodyInput.Content.Values) == 0 {
+		slog.Debug("Fields or values length is 0")
+		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		return
 	}
 
-	// Decode content to ensure it has fields front and back
-	var content map[string]interface{}
-	err = json.Unmarshal([]byte(bodyInput.Content), &content)
+	for _, value := range bodyInput.Content.Values {
+		if value == "" {
+			slog.Debug("Value is empty")
+			http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+			return
+		}
+	}
+
+	contentBytes, err := json.Marshal(bodyInput.Content)
 	if err != nil {
-		slog.Debug("Error decoding content", "error", err)
-		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
-		return
-	} else if content["front"] == nil || content["back"] == nil {
-		slog.Debug("Missing fields front or back")
-		http.Error(w, InvalidBodyErrorMessage, http.StatusBadRequest)
+		slog.Debug("Error marshalling content", "error", err)
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}
 
-	// 3. Insert using card_db
-	// 4. Encode and send response
+	card := model.NewCard(deckID, string(contentBytes), bodyInput.Source)
 
+	cardID, dbErr := s.card_db.Insert(card)
+	if dbErr != nil {
+		slog.Debug(fmt.Sprintf("Error inserting card %s", dbErr))
+		http.Error(w, InvalidDeckIDErrorMessage, http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(map[string]int{"id": cardID})
+	if err != nil {
+		slog.Debug(fmt.Sprintf("Error encoding card ID %s", err))
+		http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+	slog.Debug(fmt.Sprintf("Sent response, card ID: %d", cardID))
 	w.WriteHeader(http.StatusCreated)
 }

@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"flash-learn/internal/model"
 	"flash-learn/internal/utils"
 	"fmt"
 	"log/slog"
@@ -29,6 +30,7 @@ const (
 // allowing for easier testing and mocking.
 type CardDBWrapperInterface interface {
 	CreateTable() error
+	Insert(card model.Card) (int, error)
 }
 
 // A struct that implements the CardDBWrapperInterface.
@@ -95,11 +97,51 @@ func (wrapper *CardDBWrapper) buildCreateTableQueryString() string {
 	sb.WriteString(fmt.Sprintf("%s TEXT NOT NULL, ", cardColumnContent))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW(), ", cardColumnCreationTime))
 	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW() CHECK (%s >= %s), ", cardColumnModificationTime, cardColumnModificationTime, cardColumnCreationTime))
-	sb.WriteString(fmt.Sprintf("%s TIMESTAMP CHECK (%s >= NOW()), ", cardColumnNextReviewTime, cardColumnNextReviewTime))
+	sb.WriteString(fmt.Sprintf("%s TIMESTAMP DEFAULT NOW() + INTERVAL '10 minutes' CHECK (%s >= NOW()), ", cardColumnNextReviewTime, cardColumnNextReviewTime))
 	sb.WriteString(fmt.Sprintf("%s INT DEFAULT %d CHECK (%s >= %d), ", cardColumnRetentionLevel, cardMinRetentionLevel, cardColumnRetentionLevel, cardMinRetentionLevel))
 	sb.WriteString(fmt.Sprintf("%s INT DEFAULT 0 CHECK (%s BETWEEN %d AND %d), ", cardColumnFlag, cardColumnFlag, cardMinFlag, cardMaxFlag))
 	sb.WriteString(fmt.Sprintf("%s TEXT ", cardColumnSource))
 	sb.WriteString(")")
+
+	query := sb.String()
+	return query
+}
+
+// Inserts a new card into the database and returns its unique ID.
+//
+// Parameters:
+//   - card model.Card : Details of the card to be inserted as a model.Card object.
+//
+// Returns:
+//   - int : The unique ID of the inserted card.
+//   - error : An error if the insertion fails, nil otherwise.
+func (wrapper *CardDBWrapper) Insert(card model.Card) (int, error) {
+	query := wrapper.buildInsertQueryString(card)
+	slog.Debug(fmt.Sprintf("Inserting card: %s", query))
+
+	err := wrapper.db.QueryRow(query, card.DeckID, card.Content, card.Source).Scan(&card.ID)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Error inserting card: %s", err))
+		return 0, err
+	}
+
+	return card.ID, nil
+}
+
+// A helper function that constructs the SQL query string
+// to insert a new card into the database.
+//
+// Returns:
+//   - string : The SQL query string to insert a new card into the database.
+func (wrapper *CardDBWrapper) buildInsertQueryString(card model.Card) string {
+	var sb strings.Builder
+
+	sb.WriteString("INSERT INTO ")
+	sb.WriteString(cardTableName)
+	sb.WriteString(" (")
+	sb.WriteString(fmt.Sprintf("%s, %s, %s", cardColumnDeckID, cardColumnContent, cardColumnSource))
+	sb.WriteString(") VALUES ($1, $2, $3) RETURNING ")
+	sb.WriteString(cardColumnID)
 
 	query := sb.String()
 	return query
