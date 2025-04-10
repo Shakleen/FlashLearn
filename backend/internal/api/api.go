@@ -50,14 +50,7 @@ func (s *APIServer) Start() error {
 
 	slog.Debug("Creating router")
 	router := http.NewServeMux()
-	router.HandleFunc("GET /deck/{id}", s.HandleGetSingleDeck)
-	router.HandleFunc("GET /deck", s.HandleGetAllDecks)
-	router.HandleFunc("GET /deck/count", s.HandleGetDeckCount)
-	router.HandleFunc("GET /deck/nameMaxLength", s.HandleGetDeckNameMaxLength)
-	router.HandleFunc("GET /deck/descriptionMaxLength", s.HandleGetDeckDescriptionMaxLength)
-	router.HandleFunc("POST /deck", s.HandleInsertDeck)
-	router.HandleFunc("POST /deck/{id}", s.HandleModifyDeck)
-	router.HandleFunc("DELETE /deck/{id}", s.HandleDeleteDeck)
+	addRoutes(router, s)
 
 	slog.Debug("Creating cors handler")
 	corsHandler := corsMiddleware(router)
