@@ -10,16 +10,18 @@ import (
 	"time"
 )
 
-const deckTableName string = "decks"
-const deckColumnID string = "id"
-const deckColumnName string = "name"
-const deckColumnDescription string = "description"
-const deckColumnCreationDate string = "creation_date"
-const deckColumnModificationDate string = "modification_date"
-const deckColumnLastStudyDate string = "last_study_date"
-const deckColumnTotalCards string = "total_cards"
-const DeckColumnNameMaxLength int = 64
-const DeckColumnDescriptionMaxLength int = 255
+const (
+	deckTableName                  = "decks"
+	deckColumnID                   = "id"
+	deckColumnName                 = "name"
+	deckColumnDescription          = "description"
+	deckColumnCreationDate         = "creation_date"
+	deckColumnModificationDate     = "modification_date"
+	deckColumnLastStudyDate        = "last_study_date"
+	deckColumnTotalCards           = "total_cards"
+	DeckColumnNameMaxLength        = 64
+	DeckColumnDescriptionMaxLength = 255
+)
 
 // An interface that defines the methods for interacting with the database.
 // This interface abstracts the database operations for decks,
@@ -59,7 +61,7 @@ func (wrapper *DeckDBWrapper) CreateTable() error {
 		return utils.ErrDatabaseNotExist
 	}
 
-	query := buildCreateTableQueryString()
+	query := wrapper.buildCreateTableQueryString()
 	slog.Debug("Creating decks table", "query", query)
 
 	_, err := wrapper.db.Exec(query)
@@ -76,7 +78,7 @@ func (wrapper *DeckDBWrapper) CreateTable() error {
 //
 // Returns:
 //   - string : The SQL query string to create the decks table.
-func buildCreateTableQueryString() string {
+func (wrapper *DeckDBWrapper) buildCreateTableQueryString() string {
 	var sb strings.Builder
 	sb.WriteString("CREATE TABLE IF NOT EXISTS ")
 	sb.WriteString(deckTableName)
@@ -113,7 +115,7 @@ func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
 		return -1, utils.ErrDatabaseNotExist
 	}
 
-	query := buildInsertQueryString()
+	query := wrapper.buildInsertQueryString()
 	slog.Debug("Inserting deck", "query", query)
 	err := wrapper.db.QueryRow(query, deck.Name, deck.Description).Scan(&deck.ID)
 
@@ -136,7 +138,7 @@ func (wrapper *DeckDBWrapper) Insert(deck model.Deck) (int, error) {
 //
 // Returns:
 //   - string : The SQL query string to insert a new deck.
-func buildInsertQueryString() string {
+func (wrapper *DeckDBWrapper) buildInsertQueryString() string {
 	var sb strings.Builder
 	sb.WriteString("INSERT INTO ")
 	sb.WriteString(deckTableName)
@@ -168,7 +170,7 @@ func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
 	var deck model.Deck
 	var lastStudyDate sql.NullTime
 
-	query := buildGetSingleQueryString()
+	query := wrapper.buildGetSingleQueryString()
 	slog.Debug("Getting single deck", "query", query)
 
 	err := wrapper.db.QueryRow(query, deckID).Scan(
@@ -201,7 +203,7 @@ func (wrapper *DeckDBWrapper) GetSingle(deckID int) (model.Deck, error) {
 //
 // Returns:
 //   - string : The SQL query string to retrieve a single deck.
-func buildGetSingleQueryString() string {
+func (wrapper *DeckDBWrapper) buildGetSingleQueryString() string {
 	var sb strings.Builder
 	sb.WriteString("SELECT ")
 	sb.WriteString(deckColumnID)
@@ -238,7 +240,7 @@ func (wrapper *DeckDBWrapper) GetAll() ([]model.Deck, error) {
 		return nil, utils.ErrDatabaseNotExist
 	}
 
-	query := buildGetAllQueryString()
+	query := wrapper.buildGetAllQueryString()
 	slog.Debug("Getting all decks", "query", query)
 
 	rows, err := wrapper.db.Query(query)
@@ -286,7 +288,7 @@ func (wrapper *DeckDBWrapper) GetCount() (int, error) {
 		return 0, utils.ErrDatabaseNotExist
 	}
 
-	query := buildGetCountQueryString()
+	query := wrapper.buildGetCountQueryString()
 	slog.Debug("Getting deck count", "query", query)
 
 	var count int
@@ -306,7 +308,7 @@ func (wrapper *DeckDBWrapper) GetCount() (int, error) {
 //
 // Returns:
 //   - string : The SQL query string to count all decks.
-func buildGetCountQueryString() string {
+func (wrapper *DeckDBWrapper) buildGetCountQueryString() string {
 	var sb strings.Builder
 	sb.WriteString("SELECT COUNT(")
 	sb.WriteString(deckColumnID)
@@ -321,7 +323,7 @@ func buildGetCountQueryString() string {
 //
 // Returns:
 //   - string : The SQL query string to retrieve all decks.
-func buildGetAllQueryString() string {
+func (wrapper *DeckDBWrapper) buildGetAllQueryString() string {
 	var sb strings.Builder
 	sb.WriteString("SELECT ")
 	sb.WriteString(deckColumnID)
@@ -360,7 +362,7 @@ func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
 	// Modification date is set to the current time
 	deck.ModificationDate = time.Now()
 
-	query := buildModifyQueryString()
+	query := wrapper.buildModifyQueryString()
 	slog.Debug("Modifying deck", "query", query)
 
 	_, err := wrapper.db.Exec(query, deck.Name, deck.Description, deck.ModificationDate, deck.ID)
@@ -384,7 +386,7 @@ func (wrapper *DeckDBWrapper) Modify(deck model.Deck) error {
 //
 // Returns:
 //   - string : The SQL query string to modify a deck.
-func buildModifyQueryString() string {
+func (wrapper *DeckDBWrapper) buildModifyQueryString() string {
 	var sb strings.Builder
 	sb.WriteString("UPDATE ")
 	sb.WriteString(deckTableName)
@@ -415,7 +417,7 @@ func (wrapper *DeckDBWrapper) Delete(id int) error {
 		return utils.ErrDatabaseNotExist
 	}
 
-	query := buildDeleteQueryString()
+	query := wrapper.buildDeleteQueryString()
 	slog.Debug("Deleting deck", "query", query)
 
 	_, err := wrapper.db.Exec(query, id)
@@ -433,7 +435,7 @@ func (wrapper *DeckDBWrapper) Delete(id int) error {
 //
 // Returns:
 //   - string : The SQL query string to delete a deck.
-func buildDeleteQueryString() string {
+func (wrapper *DeckDBWrapper) buildDeleteQueryString() string {
 	var sb strings.Builder
 	sb.WriteString("DELETE FROM ")
 	sb.WriteString(deckTableName)
