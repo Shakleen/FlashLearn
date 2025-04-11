@@ -9,7 +9,6 @@ type Deck struct {
 	CreationDate     time.Time `json:"creation_date"`
 	ModificationDate time.Time `json:"modification_date"`
 	LastStudyDate    time.Time `json:"last_study_date"`
-	TotalCards       int       `json:"total_cards"`
 }
 
 func NewDeck(name string, description string) Deck {
@@ -19,6 +18,5 @@ func NewDeck(name string, description string) Deck {
 		CreationDate:     time.Now(),
 		ModificationDate: time.Now(),
 		LastStudyDate:    time.Time{},
-		TotalCards:       0,
 	}
 }

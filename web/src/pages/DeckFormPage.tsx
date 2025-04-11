@@ -27,9 +27,24 @@ function DeckFormPage() {
     fetchData(setLoading, setMaxLengths);
   }, []);
 
+  const rightComponents = [
+    <button type="submit" className="btn btn-light mx-2">
+      Submit
+    </button>,
+    <button
+      onClick={() => {
+        navigate(-1);
+      }}
+      type="button"
+      className="btn btn-primary mx-2"
+    >
+      Cancel
+    </button>,
+  ];
+
   return (
     <>
-      <NavBar />
+      <NavBar rightComponents={rightComponents} />
       {getBody(loading, setLoading, navigate, id, maxLengths)}
     </>
   );
@@ -89,18 +104,6 @@ function getBody(
           <b>Max length: {maxLengths.description}</b>
         </div>
       </div>
-      <button type="submit" className="btn btn-primary">
-        Submit
-      </button>
-      <button
-        onClick={() => {
-          navigate(-1);
-        }}
-        type="button"
-        className="btn btn-secondary"
-      >
-        Cancel
-      </button>
     </form>
   );
 }

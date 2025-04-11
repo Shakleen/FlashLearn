@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import DeckList from "../components/DeckList";
 import { DeckItem } from "../components/DeckList";
 import NavBar from "../components/NavBar";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Spinner from "../components/Spinner";
+
 function HomePage() {
   const [data, setData] = useState<DeckItem[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData(setLoading, setError, setData);
@@ -36,20 +36,15 @@ function HomePage() {
     body = <DeckList items={itemList} />;
   }
 
+  const rightComponents = [
+    <Link to="/deck/form/-1" className="btn btn-light">
+      Create New Deck
+    </Link>,
+  ];
+
   return (
     <>
-      <NavBar />
-      <center>
-        <button
-          type="button"
-          className="btn btn-primary m-3"
-          onClick={() => {
-            navigate("/deck/form/-1");
-          }}
-        >
-          Create New Deck
-        </button>
-      </center>
+      <NavBar rightComponents={rightComponents} />
       {body}
     </>
   );
