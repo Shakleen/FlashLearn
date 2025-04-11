@@ -1,0 +1,10 @@
+{
+    "manifest_version": 3,
+    "name": "Flash Learn Web Extension",
+    "version": "0.0.1",
+    "description": "A Chrome extension for Flash Learn",
+    "action": {
+        "default_popup": "index.html"
+    }
+    
+}
