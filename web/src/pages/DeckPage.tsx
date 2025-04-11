@@ -24,6 +24,13 @@ function DeckPage() {
 
   const rightComponents = [
     <Link
+      to={`/card/form/${id}`}
+      className="btn btn-light"
+      state={{ deck: result }}
+    >
+      Add Cards
+    </Link>,
+    <Link
       to={`/deck/form/${id}`}
       state={{ deck: result }}
       className="btn btn-light"
@@ -38,7 +45,7 @@ function DeckPage() {
   return (
     <>
       <NavBar rightComponents={rightComponents} />
-      {getBody(loading, error, result, id)}
+      {getBody(loading, error, result)}
     </>
   );
 }
@@ -84,8 +91,7 @@ async function fetchData(
 function getBody(
   loading: boolean,
   error: string | null,
-  result: DeckItem | null,
-  id: string | undefined
+  result: DeckItem | null
 ) {
   var body;
 

@@ -7,11 +7,14 @@ import DeckPage from "./pages/DeckPage.tsx";
 import DeckFormPage from "./pages/DeckFormPage.tsx";
 import DeleteConfirmationPage from "./pages/DeleteConfirmationPage.tsx";
 import { Toaster } from "sonner";
+import CardFormPage from "./pages/CardFormPage.tsx";
+
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> },
   { path: "/deck/:id", element: <DeckPage /> },
   { path: "/deck/form/:id", element: <DeckFormPage /> },
   { path: "/deck/delete/:id", element: <DeleteConfirmationPage /> },
+  { path: "/card/form/:id", element: <CardFormPage /> },
 ]);
 
 createRoot(document.getElementById("root")!).render(
